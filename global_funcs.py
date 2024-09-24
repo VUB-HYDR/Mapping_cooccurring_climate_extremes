@@ -1329,173 +1329,14 @@ def plot_propensity_considering_all_gcms_in_one_plot(propensity_of_an_extreme_ev
 
 
 
-# =============================================================================
-# #%% Function for plotting the propensity of an extreme event
-# def plot_propensity_considering_all_gcms_and_showing_all_extremes(summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios, list_of_extreme_events):
-#     
-#     """ Plot a map showing the propensity of an extreme event such that events more frequent than the average of the other extremes have a propensity > 1 and those less frequent than the average f the other extremes have a propensity < 1, 
-#     and propensity = 1 means that the chosen event class perfectly matches the average extreme event frequency at that gridpoint.
-#     
-#     Parameters
-#     ----------
-#     summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios : List of Xarray data arrays of propensity of all the six extreme events considering all the gcms and scenarios
-#     list_of_extreme_events : List of Strings (Extreme Events)
-#     list_of_scenarios: List of Strings
-#     
-#     Returns
-#     -------
-#     Plot (Figure) showing the propensity of all extreme events per location per scenario, with subplots for respective extremes and scenarios
-#     """
-#     
-# 
-#     list_of_extreme_event_names = []
-#     for extreme_event in list_of_extreme_events:
-#         
-#         if extreme_event == 'floodedarea':
-#             event_name = 'River Floods'
-#         if extreme_event == 'driedarea':
-#             event_name = 'Droughts'
-#         if extreme_event == 'heatwavedarea':
-#             event_name = 'Heatwaves'
-#         if extreme_event == 'cropfailedarea':
-#             event_name = 'Crop Failures'
-#         if extreme_event =='burntarea':
-#             event_name = 'Wildfires'
-#         if extreme_event == 'tropicalcyclonedarea':
-#             event_name ='Tropical Cyclones'
-#         list_of_extreme_event_names.append(event_name)
-# 
-#    
-#     # Scenarios:
-#     scenarios = ['Early-industrial', 'Present day', 'RCP2.6', 'RCP6.0', 'RCP8.5']
-# 
-#     # Setting the projection of the map to cylindrical / Mercator
-#     fig, axs = plt.subplots(6,4, figsize=(12, 10), subplot_kw = {'projection': ccrs.PlateCarree()})  # , constrained_layout=True
-#     
-#     # since axs is a 2 dimensional array of geozaxes, we have to flatten it into 1D; as explained on a similar example on this page: https://kpegion.github.io/Pangeo-at-AOES/examples/multi-panel-cartopy.html
-#     #axs=axs.flatten()
-#     
-#     # Setting up the discrete color bar scheme
-#     #cmap = mpl.cm.bwr
-#     #bounds = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2.0]
-#     #norm = mpl.colors.BoundaryNorm(bounds, cmap.N, extend='both')
-#     cmap = plt.cm.get_cmap('bwr')
-#     norm = mpl.colors.Normalize(vmin=0, vmax=2)
-#     
-#     # Subplot labels
-#     subplot_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-#                   'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x']  # List of labels for each subplot
-# 
-#     # Add row labels
-#     for row in range(6):
-#         axs[row, 0].text(-0.2, 0.5, list_of_extreme_event_names[row], transform=axs[row, 0].transAxes,
-#                          fontsize=10, ha='center', va='center', rotation=90)
-#         
-#         
-#     # Subplots for each extreme event (rows) and scenario (columns)
-#     
-#     # Iterate through each column
-#     for col in range(4):
-#         # Iterate through each row
-#         for row in range(6):
-#             # Get the index of the sublist within the main list
-#             sublist_idx = col
-#             
-#             # Get the index of the xarray within the sublist
-#             xarray_idx = row
-#             
-#             # Get the index of the subplot label
-#             label_index = row * 4 + col
-#             
-#             # Check if the sublist index is within the range of the nested list
-#             if sublist_idx < len(summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios):
-#                 # Get the sublist of xarrays
-#                 sublist = summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios[sublist_idx]
-#                 
-#                 # Check if the xarray index is within the range of the sublist
-#                 if xarray_idx < len(sublist):
-#                     # Plot the map for the current xarray in the corresponding subplot
-#                     # Set the extent of the plotn
-#                     axs[row, col].set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
-#                     
-#                     # Plot the coastlines along the continents on the map
-#                     axs[row, col].coastlines(color='dimgrey', linewidth=0.7)
-#                     
-#                     # Plot features: lakes, rivers and boarders
-#                     #axs[row, col].add_feature(cfeature.LAKES, alpha =0.5)
-#                     #axs[row, col].add_feature(cfeature.RIVERS)
-#                     #axs[row, col].add_feature(cfeature.OCEAN)
-#                     axs[row, col].add_feature(cfeature.LAND, facecolor ='lightgrey')
-#                     #ax.add_feature(cfeature.BORDERS, linestyle=':')
-#                     
-# 
-#                                       
-# 
-#                     # Remove borders
-#                     axs[row, col].set_frame_on(False)
-#                     
-#                     
-#                     plot = axs[row, col].imshow(sublist[xarray_idx], origin = 'upper' , extent= map_extent, cmap = cmap, norm=norm)  # Assuming sublist contains arrays that can be plotted with imshow
-#                     #plot = axs[row, col].imshow(sublist[xarray_idx], origin = 'upper' , extent= map_extent, cmap = plt.cm.get_cmap('bwr'), vmin = 0, vmax =2)  # Assuming sublist contains arrays that can be plotted with imshow
-#                     
-#                     # Subplot labels
-#                     # Add subplot label
-#                     axs[row, col].text(0.02, 0.95, subplot_labels[label_index], transform=axs[row, col].transAxes, fontsize=9, ha='left')
-#     
-#                     # Add row and column labels
-#                     if row == 0:
-#                         axs[row, col].set_title(scenarios[col], fontsize=10)
-#                     
-#     # Add the title and legend to the figure and show the figure
-#     fig.suptitle('Propensity of extreme events \n'.format(event_name),fontsize=10) #Plot title     
-#     
-#     # Discrete color bar legend
-#     fig.subplots_adjust(wspace=0.2)
-#     #cbar_ax = fig.add_axes([0.22, 0.05, 0.6, 0.015])
-#     cbar_ax = fig.add_axes([0.4, 0.05, 0.25, 0.015])
-#     
-#     cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='max', shrink = 0.3)  
-#     #cbar = fig.colorbar(plot, cax=cbar_ax, orientation='horizontal', extend='both', ticks=[0, 0.5, 1, 1.5, 2], shrink = 0.5)  #Plots the legend color bar   
-#     cbar.set_ticks([0, 0.5, 1, 1.5, 2])
-#     cbar.ax.tick_params(labelsize=9) # Text size on legend color bar 
-#     cbar.set_label(label = 'Propensity', size = 9)
-# 
-# # =============================================================================
-# #     # Text outside the plot to display the scenario (top-center)
-# #     fig.text(0.5,0.935,'{}'.format(scenario_name), fontsize = 8, ha = 'center', va = 'center')
-# # =============================================================================
-# 
-#     #plt.tight_layout()
-#     
-#     # Change this directory to save the plots to your desired directory
-#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Propensity of all extremes under the different scenarios considering all impact models and their respective driving GCMs.pdf', dpi = 300)
-#     
-#     plt.show()
-#     
-#     #plt.close()
-#     
-#     return plot_propensity_considering_all_gcms_and_showing_all_extremes
-# 
-# =============================================================================
-
-
-# =============================================================================
-# # Function to calculate the difference between Present day and RCP6.0
-# def calculate_difference(present, rcp60):
-#     difference = [rcp60[i] - present[i] if present[i] is not None and rcp60[i] is not None else None for i in range(len(present))]
-#     return difference
-# =============================================================================
-
+#%% Function to calculate the difference between Present day and RCP6.0
 def calculate_difference(present, rcp60):
-    difference = [
-        rcp60[i] - (present[i] if not np.isnan(present[i]) else 0)
-        if rcp60[i] is not None and present[i] is not None 
-        else None 
-        for i in range(len(present))
-    ]
+    difference = [rcp60[i] - present[i] if present[i] is not None and rcp60[i] is not None else None for i in range(len(present))]
     return difference
 
-# Function for plotting the propensity of extreme events considering all GCMs and showing all extremes
+
+
+#%% Function for plotting the propensity of extreme events considering all GCMs and showing all extremes
 def plot_propensity_considering_all_gcms_and_showing_all_extremes(summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios, list_of_extreme_events):
     
     list_of_extreme_event_names = []
@@ -1648,24 +1489,17 @@ def plot_propensity_considering_all_gcms_and_showing_all_extremes(summary_of_pro
 
 
 #%% Function for plotting the length of spell of an extreme event
+def calculate_difference_length_of_spell_individual_extremes(present, rcp60):
+    difference = [
+        np.where(np.isnan(present[i]) & ~np.isnan(rcp60[i]), rcp60[i], rcp60[i] - present[i])
+        if present[i] is not None and rcp60[i] is not None
+        else None
+        for i in range(len(present))
+    ]
+    return difference
+
 def plot_quantile_95th_of_length_of_spell_with_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_extreme_events, list_of_extreme_events):
-    
-# =============================================================================
-#     """ Plot a map showing the propensity of an extreme event such that events more frequent than the average of the other extremes have a propensity > 1 and those less frequent than the average f the other extremes have a propensity < 1, 
-#     and propensity = 1 means that the chosen event class perfectly matches the average extreme event frequency at that gridpoint.
-#     
-#     Parameters
-#     ----------
-#     summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios : List of Xarray data arrays of propensity of all the six extreme events considering all the gcms and scenarios
-#     list_of_extreme_events : List of Strings (Extreme Events)
-#     list_of_scenarios: List of Strings
-#     
-#     Returns
-#     -------
-#     Plot (Figure) showing the propensity of all extreme events per location per scenario, with subplots for respective extremes and scenarios
-#     """
-# =============================================================================
-    
+        
 
     list_of_extreme_event_names = []
     for extreme_event in list_of_extreme_events:
@@ -1694,7 +1528,7 @@ def plot_quantile_95th_of_length_of_spell_with_occurrence_considering_all_gcms_a
     scenarios_supplementary = ['Early-industrial', 'RCP2.6', 'RCP8.5']
     
     # Calculate the difference between Present day and RCP6.0
-    difference = calculate_difference(
+    difference = calculate_difference_length_of_spell_individual_extremes(
         average_length_of_spells_for_all_extreme_events[1], 
         average_length_of_spells_for_all_extreme_events[3]
     )
@@ -1834,151 +1668,6 @@ def plot_quantile_95th_of_length_of_spell_with_occurrence_considering_all_gcms_a
     return main_scenarios_data, supplementary_scenarios_data
     
 
-# =============================================================================
-#     # Setting the projection of the map to cylindrical / Mercator
-#     fig, axs = plt.subplots(6,4, figsize=(12, 10), subplot_kw = {'projection': ccrs.PlateCarree()})  # , constrained_layout=True
-#     
-#     # since axs is a 2 dimensional array of geozaxes, we have to flatten it into 1D; as explained on a similar example on this page: https://kpegion.github.io/Pangeo-at-AOES/examples/multi-panel-cartopy.html
-#     #axs=axs.flatten()
-#     
-#     # Setting up the discrete color bar scheme
-#     #cmap = mpl.cm.bwr
-#     cmap = plt.cm.get_cmap('YlOrRd')
-#     bounds = [1, 5, 10, 15, 20, 25, 30]
-#     norm = mpl.colors.BoundaryNorm(bounds, cmap.N, extend='both')
-#     #cmap = plt.cm.get_cmap('YlOrRd')
-#     #norm = mpl.colors.Normalize(vmin=1, vmax=30)
-#     
-#     
-#     # Subplot labels
-#     subplot_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-#                   'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x']  # List of labels for each subplot
-# 
-#     # Add row labels
-#     for row in range(6):
-#         axs[row, 0].text(-0.2, 0.5, list_of_extreme_event_names[row], transform=axs[row, 0].transAxes,
-#                          fontsize=10, ha='center', va='center', rotation=90)
-#         
-#         
-#     # Subplots for each extreme event (rows) and scenario (columns)
-#     
-#     # Iterate through each column
-#     for col in range(4):
-#         # Iterate through each row
-#         for row in range(6):
-#             # Get the index of the sublist within the main list
-#             sublist_idx = col
-#             
-#             # Get the index of the xarray within the sublist
-#             xarray_idx = row
-#             
-#             # Get the index of the subplot label
-#             label_index = row * 4 + col
-#             
-#             # Check if the sublist index is within the range of the nested list
-#             if sublist_idx < len(average_length_of_spells_for_all_extreme_events):
-#                 # Get the sublist of xarrays
-#                 sublist = average_length_of_spells_for_all_extreme_events[sublist_idx]
-#                 
-#                 # Check if the xarray index is within the range of the sublist
-#                 if xarray_idx < len(sublist):
-#                     # Plot the map for the current xarray in the corresponding subplot
-#                     # Set the extent of the plotn
-#                     axs[row, col].set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
-#                     
-#                     # Plot the coastlines along the continents on the map
-#                     axs[row, col].coastlines(color='dimgrey', linewidth=0.7)
-#                     
-#                     # Plot features: lakes, rivers and boarders
-#                     #axs[row, col].add_feature(cfeature.LAKES, alpha =0.5)
-#                     #axs[row, col].add_feature(cfeature.RIVERS)
-#                     #axs[row, col].add_feature(cfeature.OCEAN)
-#                     axs[row, col].add_feature(cfeature.LAND, facecolor ='lightgrey')
-#                     #ax.add_feature(cfeature.BORDERS, linestyle=':')
-#                     
-# # =============================================================================
-# #                     lon_formatter = LongitudeFormatter()
-# #                     lat_formatter = LatitudeFormatter()
-# #                     
-# #                     # Coordinates longitude and latitude ticks...These can be manipulated depending on study area chosen
-# #                     xticks = [-180, -120, -60, 0, 60, 120, 180] # Longitudes
-# #                     axs[row, col].set_xticks(xticks, crs=ccrs.PlateCarree()) 
-# #                     if row == 5: # Only bottom row subplots have x labels
-# #                         axs[row, col].set_xticklabels(xticks, fontsize = 6)
-# #                         axs[row, col].xaxis.set_major_formatter(lon_formatter)
-# #                     else: 
-# #                         axs[row, col].set_xticklabels([])
-# #     
-# #                     
-# #                     yticks = [90, 60, 30, 0, -30, -60]
-# #                     axs[row, col].set_yticks(yticks, crs=ccrs.PlateCarree()) 
-# #                     if col == 0: # Only leftmost column subplots have y labels
-# #                         axs[row, col].set_yticklabels(yticks, fontsize = 6)
-# #                         axs[row, col].yaxis.set_major_formatter(lat_formatter)
-# #                     else:
-# #                         axs[row, col].set_yticklabels([])
-# # =============================================================================
-#                         
-# # =============================================================================
-# #                     
-# #                     lon_formatter = LongitudeFormatter()
-# #                     lat_formatter = LatitudeFormatter()
-# #                     axs[row, col].xaxis.set_major_formatter(lon_formatter)
-# #                     axs[row, col].yaxis.set_major_formatter(lat_formatter)
-# #                     
-# # =============================================================================
-#                                       
-# 
-#                     # Remove borders
-#                     axs[row, col].set_frame_on(False)
-#                     
-#                     
-#                     plot = axs[row, col].imshow(sublist[xarray_idx], origin = 'upper' , extent= map_extent, cmap = cmap, norm=norm)  # Assuming sublist contains arrays that can be plotted with imshow
-#                     #plot = axs[row, col].imshow(sublist[xarray_idx], origin = 'upper' , extent= map_extent, cmap = plt.cm.get_cmap('bwr'), vmin = 0, vmax =2)  # Assuming sublist contains arrays that can be plotted with imshow
-#                     
-#                     # Subplot labels
-#                     # Add subplot label
-#                     axs[row, col].text(0.02, 0.95, subplot_labels[label_index], transform=axs[row, col].transAxes, fontsize=9, ha='left')
-#     
-#                     # Add row and column labels
-#                     if row == 0:
-#                         axs[row, col].set_title(scenarios[col], fontsize=10)
-#                     
-#     # Add the title and legend to the figure and show the figure
-#     fig.suptitle('95th percentile of length of spell of extreme events \n'.format(event_name),fontsize=10) #Plot title     
-#     
-#     # Discrete color bar legend
-#     fig.subplots_adjust(wspace=0.2)
-#     #cbar_ax = fig.add_axes([0.22, 0.05, 0.6, 0.015])
-#     cbar_ax = fig.add_axes([0.4, 0.05, 0.25, 0.015])
-#     
-#     cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='max', shrink = 0.3)  
-#     #cbar = fig.colorbar(plot, cax=cbar_ax, orientation='horizontal', extend='both', ticks=[0, 0.5, 1, 1.5, 2], shrink = 0.5)  #Plots the legend color bar   
-#     cbar.set_ticks([1, 5, 10, 15, 20, 25, 30])
-#     cbar.ax.tick_params(labelsize=9) # Text size on legend color bar 
-#     cbar.set_label(label = 'Years', size = 9)
-# 
-# # =============================================================================
-# #     # Text outside the plot to display the scenario (top-center)
-# #     fig.text(0.5,0.935,'{}'.format(scenario_name), fontsize = 8, ha = 'center', va = 'center')
-# # =============================================================================
-# 
-#     #plt.tight_layout()
-#     
-#     # Change this directory to save the plots to your desired directory
-#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th percentile of length of spell for all extremes under the different scenarios considering all impact models and their respective driving GCMs.pdf', dpi = 300)
-#     
-#     plt.show()
-#     
-#     #plt.close()
-#     
-#     return average_length_of_spells_for_all_extreme_events
-# =============================================================================
-
-
-
-
-
 #%% Function for plotting the length of spell of compound evennts
 def plot_quantile_95th_of_length_of_spell_with_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_compound_extreme_events, compound_events_names):
     
@@ -1987,7 +1676,6 @@ def plot_quantile_95th_of_length_of_spell_with_compound_event_occurrence_conside
     Parameters
     ----------
     average_length_of_spells_for_all_compound_extreme_events : List of Xarray data arrays of the 95th quantile for length of spell of all the possible comnbinations of six extreme events considering all the gcms and scenarios
-    list_of_extreme_events : List of Strings (Extreme Events)
     compound_events_names: the order of the pairs
     
     Returns
@@ -2153,175 +1841,17 @@ def plot_quantile_95th_of_length_of_spell_with_compound_event_occurrence_conside
 
 
 
-#%% Ploting a select few
-# =============================================================================
-# def plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_compound_extreme_events, compound_events_names, selected_indices):
-#     """ 
-#     Plot a map showing the 95th quantile for length of spell of compound events such that events that gridpoint.
-#     
-#     Parameters
-#     ----------
-#     average_length_of_spells_for_all_compound_extreme_events : List of Xarray data arrays of the 95th quantile for length of spell of all the possible combinations of six extreme events considering all the gcms and scenarios
-#     compound_events_names : List of Strings (Extreme Events)
-#     selected_indices : List of integers (Indices of the selected compound events to plot)
-#     
-#     Returns
-#     -------
-#     Plot (Figure) showing the 95th quantile for length of spell of compound events
-#     """
-#     
-#     
-#     
-#     list_of_compound_event_acronyms = []  
-#     for compound_event in compound_events_names:
-#         # renaming event 1 with an acronym for plotting purposes
-#         if compound_event[0] == 'floodedarea':
-#             event_1_name = 'RF'
-#         if compound_event[0] == 'driedarea':
-#             event_1_name = 'DR'
-#         if compound_event[0] == 'heatwavedarea':
-#             event_1_name = 'HW'
-#         if compound_event[0] == 'cropfailedarea':
-#             event_1_name = 'CF'
-#         if compound_event[0] =='burntarea':
-#             event_1_name = 'WF'
-#         if compound_event[0] == 'tropicalcyclonedarea':
-#             event_1_name ='TC'
-#         
-#         # renaming event 2 with an acronym for plotting purposes
-#         if compound_event[1] == 'floodedarea':
-#             event_2_name = 'RF'
-#         if compound_event[1] == 'driedarea':
-#             event_2_name = 'DR'
-#         if compound_event[1] == 'heatwavedarea':
-#             event_2_name = 'HW'
-#         if compound_event[1] == 'cropfailedarea':
-#             event_2_name = 'CF'
-#         if compound_event[1] =='burntarea':
-#             event_2_name = 'WF'
-#         if compound_event[1] == 'tropicalcyclonedarea':
-#             event_2_name ='TC'
-#         
-#         compound_event_acronyms = '{} & {}'.format(event_1_name, event_2_name)
-#         list_of_compound_event_acronyms.append(compound_event_acronyms)
-#     
-#     selected_compound_events_names = [list_of_compound_event_acronyms[i] for i in selected_indices]
-#     
-#    
-#     # Scenarios:
-#     scenarios = ['Early-industrial', 'Present day', 'RCP2.6', 'RCP6.0', 'RCP8.5']
-# 
-#     # Setting the projection of the map to cylindrical / Mercator
-#     fig, axs = plt.subplots(len(selected_indices),4, figsize=(12, 10), subplot_kw = {'projection': ccrs.PlateCarree()})  # , constrained_layout=True
-#     
-#     # since axs is a 2 dimensional array of geozaxes, we have to flatten it into 1D; as explained on a similar example on this page: https://kpegion.github.io/Pangeo-at-AOES/examples/multi-panel-cartopy.html
-#     #axs=axs.flatten()
-#     
-#     # Setting up the discrete color bar scheme
-#     #cmap = mpl.cm.bwr
-#     cmap = plt.cm.get_cmap('YlOrRd')
-#     bounds = [1, 5, 10, 15, 20, 25, 30]
-#     norm = mpl.colors.BoundaryNorm(bounds, cmap.N, extend='both')
-#     #cmap = plt.cm.get_cmap('YlOrRd')
-#     #norm = mpl.colors.Normalize(vmin=1, vmax=30)
-#     
-#     
-# # =============================================================================
-# #     # Subplot labels
-# #     subplot_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-# #                   'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x']  # List of labels for each subplot
-# # 
-# # =============================================================================
-#     # Add row labels
-#     for row in range(len(selected_indices)):
-#         axs[row, 0].text(-0.2, 0.5, selected_compound_events_names[row], transform=axs[row, 0].transAxes,
-#                          fontsize=10, ha='center', va='center', rotation=90)
-#         
-#         
-#     # Subplots for each extreme event (rows) and scenario (columns)
-#     
-#     # Iterate through each column
-#     for col in range(4):
-#         # Iterate through each row
-#         for row in range(len(selected_indices)):
-#             # Get the index of the sublist within the main list
-#             sublist_idx = col
-#             
-#             # Get the index of the xarray within the sublist
-#             xarray_idx = row
-#             
-#             # Get the index of the subplot label
-#             label_index = row * 4 + col
-#             
-#             # Check if the sublist index is within the range of the nested list
-#             if sublist_idx < len(average_length_of_spells_for_all_compound_extreme_events):
-#                 # Get the sublist of xarrays
-#                 sublist = [average_length_of_spells_for_all_compound_extreme_events[sublist_idx][i] for i in selected_indices]
-#                 
-#                 # Check if the xarray index is within the range of the sublist
-#                 if xarray_idx < len(sublist):
-#                     # Plot the map for the current xarray in the corresponding subplot
-#                     # Set the extent of the plotn
-#                     axs[row, col].set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
-#                     
-#                     # Plot the coastlines along the continents on the map
-#                     axs[row, col].coastlines(color='dimgrey', linewidth=0.7)
-#                     
-#                     # Plot features: lakes, rivers and boarders
-#                     #axs[row, col].add_feature(cfeature.LAKES, alpha =0.5)
-#                     #axs[row, col].add_feature(cfeature.RIVERS)
-#                     #axs[row, col].add_feature(cfeature.OCEAN)
-#                     axs[row, col].add_feature(cfeature.LAND, facecolor ='lightgrey')
-#                     #ax.add_feature(cfeature.BORDERS, linestyle=':')
-#                                                         
-# 
-#                     # Remove borders
-#                     axs[row, col].set_frame_on(False)
-#                     
-#                     
-#                     plot = axs[row, col].imshow(sublist[xarray_idx], origin = 'upper' , extent= map_extent, cmap = cmap, norm=norm)  # Assuming sublist contains arrays that can be plotted with imshow
-#                     #plot = axs[row, col].imshow(sublist[xarray_idx], origin = 'upper' , extent= map_extent, cmap = plt.cm.get_cmap('bwr'), vmin = 0, vmax =2)  # Assuming sublist contains arrays that can be plotted with imshow
-#                     
-# # =============================================================================
-# #                     # Subplot labels
-# #                     # Add subplot label
-# #                     axs[row, col].text(0.02, 0.95, subplot_labels[label_index], transform=axs[row, col].transAxes, fontsize=9, ha='left')
-# #     
-# # =============================================================================
-#                     # Add row and column labels
-#                     if row == 0:
-#                         axs[row, col].set_title(scenarios[col], fontsize=10)
-#                     
-#     # Add the title and legend to the figure and show the figure
-#     fig.suptitle('95th percentile of length of spell of compound events \n'.format(event_name),fontsize=10) #Plot title     
-#     
-#     # Discrete color bar legend
-#     fig.subplots_adjust(wspace=0.2)
-#     #cbar_ax = fig.add_axes([0.22, 0.05, 0.6, 0.015])
-#     cbar_ax = fig.add_axes([0.4, 0.05, 0.25, 0.015])
-#     
-#     cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='max', shrink = 0.3)  
-#     #cbar = fig.colorbar(plot, cax=cbar_ax, orientation='horizontal', extend='both', ticks=[0, 0.5, 1, 1.5, 2], shrink = 0.5)  #Plots the legend color bar   
-#     cbar.set_ticks([1, 5, 10, 15, 20, 25, 30])
-#     cbar.ax.tick_params(labelsize=9) # Text size on legend color bar 
-#     cbar.set_label(label = 'Years', size = 9)
-# 
-# # =============================================================================
-# #     # Text outside the plot to display the scenario (top-center)
-# #     fig.text(0.5,0.935,'{}'.format(scenario_name), fontsize = 8, ha = 'center', va = 'center')
-# # =============================================================================
-# 
-#     #plt.tight_layout()
-#     
-# 
-#     # Save and show the plot
-#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_selected_compound_extremes_under_the_different_scenarios_considering_all_impact_models_and_their_respective_driving_GCMs.pdf', dpi=300)
-#     plt.show()
-# 
-#     return average_length_of_spells_for_all_compound_extreme_events
-# 
-# =============================================================================
+#%%
+def calculate_difference_length_of_spell(present, rcp60):
+    difference = [
+        np.where(np.isnan(present[i]) & ~np.isnan(rcp60[i]), rcp60[i], rcp60[i] - present[i])
+        if present[i] is not None and rcp60[i] is not None
+        else None
+        for i in range(len(present))
+    ]
+    return difference
 
+#%%
 def plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes(
         average_length_of_spells_for_all_compound_extreme_events, 
         compound_events_names, 
@@ -2367,7 +1897,7 @@ def plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrenc
     scenarios_main = ['Present day', 'RCP6.0', 'Difference']
 
     # Calculate the difference between Present day and RCP6.0
-    difference = calculate_difference(
+    difference = calculate_difference_length_of_spell(
         average_length_of_spells_for_all_compound_extreme_events[1], 
         average_length_of_spells_for_all_compound_extreme_events[3]
     )
@@ -2502,202 +2032,189 @@ def plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrenc
 
     return main_scenarios_data, supplementary_scenarios_data
 
+#%%
+def plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes_second_plot(
+        average_length_of_spells_for_all_compound_extreme_events, 
+        compound_events_names, 
+        selected_indices):
+    """
+    Plot a map showing the 95th quantile for the length of spell of compound events for selected scenarios.
+    
+    Parameters
+    ----------
+    average_length_of_spells_for_all_compound_extreme_events : List of Xarray data arrays 
+        The 95th quantile for length of spell of all possible combinations of six extreme events considering 
+        all the gcms and scenarios.
+    compound_events_names : List of Strings
+        Names of the extreme events.
+    selected_indices : List of integers
+        Indices of the selected compound events to plot.
+    
+    Returns
+    -------
+    Plot (Figure) showing the 95th quantile for length of spell of compound events.
+    """
+    
+    # Mapping event names to acronyms
+    event_acronyms = {
+        'floodedarea': 'RF',
+        'driedarea': 'DR',
+        'heatwavedarea': 'HW',
+        'cropfailedarea': 'CF',
+        'burntarea': 'WF',
+        'tropicalcyclonedarea': 'TC'
+    }
+    
+    list_of_compound_event_acronyms = []
+    for compound_event in compound_events_names:
+        event_1_name = event_acronyms.get(compound_event[0], compound_event[0])
+        event_2_name = event_acronyms.get(compound_event[1], compound_event[1])
+        compound_event_acronyms = '{} & {}'.format(event_1_name, event_2_name)
+        list_of_compound_event_acronyms.append(compound_event_acronyms)
+    
+    selected_compound_events_names = [list_of_compound_event_acronyms[i] for i in selected_indices]
+    
+    # Scenarios for the main figure:
+    scenarios_main = ['Present day', 'RCP6.0', 'Difference']
 
+    # Calculate the difference between Present day and RCP6.0
+    difference = calculate_difference_length_of_spell(
+        average_length_of_spells_for_all_compound_extreme_events[1], 
+        average_length_of_spells_for_all_compound_extreme_events[3]
+    )
+    
+    main_scenarios_data = [
+        average_length_of_spells_for_all_compound_extreme_events[1],  # Present day
+        average_length_of_spells_for_all_compound_extreme_events[3],  # RCP6.0
+        difference  # Difference
+    ]
+    
+    # Supplementary scenarios
+    scenarios_supplementary = ['Early-industrial', 'RCP2.6', 'RCP8.5']
+    
+    supplementary_scenarios_data = [
+        average_length_of_spells_for_all_compound_extreme_events[0],  # Early-industrial
+        average_length_of_spells_for_all_compound_extreme_events[2],  # RCP2.6
+        average_length_of_spells_for_all_compound_extreme_events[4]   # RCP8.5
+    ]
+    
+    subplot_labels = 'abcdefghijklmnopqrstuvwxyz'
+    
+    # Setting the projection of the map to cylindrical / Mercator
+    fig_main, axs_main = plt.subplots(len(selected_indices), 3, figsize=(10, 8), subplot_kw={'projection': ccrs.PlateCarree()})
+    
+    # Flatten the 2D array of axes into 1D
+    axs_main = axs_main.flatten()
+    
+    # Setting up the discrete color bar scheme
+    cmap = plt.cm.get_cmap('YlOrRd')
+    norm = mpl.colors.BoundaryNorm([1, 5, 10, 15, 20, 25, 30], cmap.N, extend='both')
+    
+    # Diverging color map for the difference plot
+    cmap_diff = plt.cm.get_cmap('bwr')
+    norm_diff = mpl.colors.TwoSlopeNorm(vmin=-10, vcenter=0, vmax=10)
+    
+    # Add maps to the main figure
+    for col in range(3):
+        for row in range(len(selected_indices)):
+            index = row * 3 + col
+            ax = axs_main[index]
+            ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+            ax.coastlines(color='dimgrey', linewidth=0.7)
+            ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+            ax.spines['geo'].set_visible(False)  # Remove border
+            
+            if col == 2:  # For the difference column
+                plot = ax.imshow(
+                    main_scenarios_data[col][selected_indices[row]], 
+                    origin='lower', 
+                    extent=[-180, 180, 90, -60], 
+                    cmap=cmap_diff, 
+                    norm=norm_diff
+                )
+            else:
+                plot = ax.imshow(
+                    main_scenarios_data[col][selected_indices[row]], 
+                    origin='lower', 
+                    extent=[-180, 180, 90, -60], 
+                    cmap=cmap, 
+                    norm=norm
+                )
+           
+            if row == 0:
+                ax.set_title(scenarios_main[col], fontsize=10)
+            if col == 0:
+                ax.text(-0.2, 0.5, selected_compound_events_names[row], transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
+            # Add subplot label
+            ax.text(0.02, 1.05, subplot_labels[index], transform=ax.transAxes, fontsize=9, va='top', ha='left')
+        
+        
+    fig_main.subplots_adjust(wspace=0.1, hspace=-0.7)
+    cbar_ax_main = fig_main.add_axes([0.3, 0.25, 0.2, 0.015])
+    cbar_main = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_main, orientation='horizontal', extend='max')
+    cbar_main.ax.tick_params(labelsize=9)
+    cbar_main.set_label(label='Years', size=9)
+    
+    # Color bar for the difference column
+    cbar_ax_diff = fig_main.add_axes([0.6, 0.25, 0.2, 0.015])
+    cbar_diff = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm_diff, cmap=cmap_diff), cax=cbar_ax_diff, orientation='horizontal', extend='both')
+    cbar_diff.ax.tick_params(labelsize=9)
+    cbar_diff.set_label(label='Difference (Years)', size=9)
+
+    # Save and show the main plot
+    plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_selected_compound_extremes_under_the_present_day_and_rcp60.pdf', dpi=300)
+    plt.show()
+    
+    # Supplementary figure
+    fig_supp, axs_supp = plt.subplots(len(selected_indices), 3, figsize=(12, 10), subplot_kw={'projection': ccrs.PlateCarree()})
+    axs_supp = axs_supp.flatten()
+    
+    # Add maps to the supplementary figure
+    for col in range(3):
+        for row in range(len(selected_indices)):
+            index = row * 3 + col
+            ax = axs_supp[index]
+            ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+            ax.coastlines(color='dimgrey', linewidth=0.7)
+            #ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+            # Check if CF is in the event name and if it's the RCP8.5 column (last column)
+            if "CF" in selected_compound_events_names[row] and col == 2:
+                # Apply hatching for RCP8.5 scenario for CF
+                ax.add_feature(cfeature.LAND, facecolor='none', edgecolor='lightgrey', hatch='///')
+            else:
+                ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+            ax.spines['geo'].set_visible(False)  # Remove border
+
+            plot = ax.imshow(
+                supplementary_scenarios_data[col][selected_indices[row]], 
+                origin='lower', 
+                extent=[-180, 180, 90, -60], 
+                cmap=cmap, 
+                norm=norm
+            )
+           
+            if row == 0:
+                ax.set_title(scenarios_supplementary[col], fontsize=10)
+            if col == 0:
+                ax.text(-0.2, 0.5, selected_compound_events_names[row], transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
+            # Add subplot label
+            ax.text(0.02, 1.05, subplot_labels[index], transform=ax.transAxes, fontsize=9, va='top', ha='left')
+        
+        
+    fig_supp.subplots_adjust(wspace=0.1, hspace=-0.7)
+    cbar_ax_supp = fig_supp.add_axes([0.4, 0.25, 0.25, 0.015])
+    cbar_supp = fig_supp.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_supp, orientation='horizontal', extend='max')
+    cbar_supp.ax.tick_params(labelsize=9)
+    cbar_supp.set_label(label='Years', size=9)
+
+    # Save and show the supplementary plot
+    plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_selected_compound_extremes_under_the_early_industrial_rcp26_andrcp85_SUPPLEMENT.pdf', dpi=300)
+    plt.show()
+
+    return main_scenarios_data, supplementary_scenarios_data
 
 
 #%% Function for plotting the average frequency of all the extreme events
-# =============================================================================
-# def plot_average_frequency_of_extreme_events_considering_all_gcms_and_showing_all_extremes(average_frequency_of_all_extreme_events, list_of_extreme_events):
-#     
-# # =============================================================================
-# #     """ Plot a map showing the propensity of an extreme event such that events more frequent than the average of the other extremes have a propensity > 1 and those less frequent than the average f the other extremes have a propensity < 1, 
-# #     and propensity = 1 means that the chosen event class perfectly matches the average extreme event frequency at that gridpoint.
-# #     
-# #     Parameters
-# #     ----------
-# #     summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios : List of Xarray data arrays of propensity of all the six extreme events considering all the gcms and scenarios
-# #     list_of_extreme_events : List of Strings (Extreme Events)
-# #     list_of_scenarios: List of Strings
-# #     
-# #     Returns
-# #     -------
-# #     Plot (Figure) showing the propensity of all extreme events per location per scenario, with subplots for respective extremes and scenarios
-# #     """
-# # =============================================================================
-#     
-# 
-#     list_of_extreme_event_names = []
-#     for extreme_event in list_of_extreme_events:
-#         
-#         if extreme_event == 'floodedarea':
-#             event_name = 'River Floods'
-#         if extreme_event == 'driedarea':
-#             event_name = 'Droughts'
-#         if extreme_event == 'heatwavedarea':
-#             event_name = 'Heatwaves'
-#         if extreme_event == 'cropfailedarea':
-#             event_name = 'Crop Failures'
-#         if extreme_event =='burntarea':
-#             event_name = 'Wildfires'
-#         if extreme_event == 'tropicalcyclonedarea':
-#             event_name ='Tropical Cyclones'
-#         list_of_extreme_event_names.append(event_name)
-# 
-#    
-#     # Scenarios:
-#     scenarios = ['Early-industrial', 'Present day', 'RCP2.6', 'RCP6.0', 'RCP8.5']
-# 
-#     # Setting the projection of the map to cylindrical / Mercator
-#     fig, axs = plt.subplots(6,4, figsize=(12, 10), subplot_kw = {'projection': ccrs.PlateCarree()})  # , constrained_layout=True
-#     
-#     # since axs is a 2 dimensional array of geozaxes, we have to flatten it into 1D; as explained on a similar example on this page: https://kpegion.github.io/Pangeo-at-AOES/examples/multi-panel-cartopy.html
-#     #axs=axs.flatten()
-#     
-#     # Setting up the discrete color bar scheme
-#     #cmap = mpl.cm.bwr
-#     cmap = plt.cm.get_cmap('viridis')
-#     bounds = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
-#     norm = mpl.colors.BoundaryNorm(bounds, cmap.N, extend='max')
-#     #cmap = plt.cm.get_cmap('YlOrRd')
-#     #norm = mpl.colors.Normalize(vmin=1, vmax=30)
-#     
-#     
-#     # Subplot labels
-#     subplot_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-#                   'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x']  # List of labels for each subplot
-# 
-#     # Add row labels
-#     for row in range(6):
-#         axs[row, 0].text(-0.2, 0.5, list_of_extreme_event_names[row], transform=axs[row, 0].transAxes,
-#                          fontsize=10, ha='center', va='center', rotation=90)
-#         
-#         
-#     # Subplots for each extreme event (rows) and scenario (columns)
-#     
-#     # Iterate through each column
-#     for col in range(4):
-#         # Iterate through each row
-#         for row in range(6):
-#             # Get the index of the sublist within the main list
-#             sublist_idx = col
-#             
-#             # Get the index of the xarray within the sublist
-#             xarray_idx = row
-#             
-#             # Get the index of the subplot label
-#             label_index = row * 4 + col
-#             
-#             # Check if the sublist index is within the range of the nested list
-#             if sublist_idx < len(average_frequency_of_all_extreme_events):
-#                 # Get the sublist of xarrays
-#                 sublist = average_frequency_of_all_extreme_events[sublist_idx]
-#                 
-#                 # Check if the xarray index is within the range of the sublist
-#                 if xarray_idx < len(sublist):
-#                     # Plot the map for the current xarray in the corresponding subplot
-#                     # Set the extent of the plotn
-#                     axs[row, col].set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
-#                     
-#                     # Plot the coastlines along the continents on the map
-#                     axs[row, col].coastlines(color='dimgrey', linewidth=0.7)
-#                     
-#                     # Plot features: lakes, rivers and boarders
-#                     #axs[row, col].add_feature(cfeature.LAKES, alpha =0.5)
-#                     #axs[row, col].add_feature(cfeature.RIVERS)
-#                     #axs[row, col].add_feature(cfeature.OCEAN)
-#                     axs[row, col].add_feature(cfeature.LAND, facecolor ='lightgrey')
-#                     #ax.add_feature(cfeature.BORDERS, linestyle=':')
-#                     
-# # =============================================================================
-# #                     lon_formatter = LongitudeFormatter()
-# #                     lat_formatter = LatitudeFormatter()
-# #                     
-# #                     # Coordinates longitude and latitude ticks...These can be manipulated depending on study area chosen
-# #                     xticks = [-180, -120, -60, 0, 60, 120, 180] # Longitudes
-# #                     axs[row, col].set_xticks(xticks, crs=ccrs.PlateCarree()) 
-# #                     if row == 5: # Only bottom row subplots have x labels
-# #                         axs[row, col].set_xticklabels(xticks, fontsize = 6)
-# #                         axs[row, col].xaxis.set_major_formatter(lon_formatter)
-# #                     else: 
-# #                         axs[row, col].set_xticklabels([])
-# #     
-# #                     
-# #                     yticks = [90, 60, 30, 0, -30, -60]
-# #                     axs[row, col].set_yticks(yticks, crs=ccrs.PlateCarree()) 
-# #                     if col == 0: # Only leftmost column subplots have y labels
-# #                         axs[row, col].set_yticklabels(yticks, fontsize = 6)
-# #                         axs[row, col].yaxis.set_major_formatter(lat_formatter)
-# #                     else:
-# #                         axs[row, col].set_yticklabels([])
-# # =============================================================================
-#                         
-# # =============================================================================
-# #                     
-# #                     lon_formatter = LongitudeFormatter()
-# #                     lat_formatter = LatitudeFormatter()
-# #                     axs[row, col].xaxis.set_major_formatter(lon_formatter)
-# #                     axs[row, col].yaxis.set_major_formatter(lat_formatter)
-# #                     
-# # =============================================================================
-#                                       
-# 
-#                     # Remove borders
-#                     axs[row, col].set_frame_on(False)
-#                     
-#                     
-#                     plot = axs[row, col].imshow(sublist[xarray_idx], origin = 'upper' , extent= map_extent, cmap = cmap, norm=norm)  # Assuming sublist contains arrays that can be plotted with imshow
-#                     #plot = axs[row, col].imshow(sublist[xarray_idx], origin = 'upper' , extent= map_extent, cmap = plt.cm.get_cmap('bwr'), vmin = 0, vmax =2)  # Assuming sublist contains arrays that can be plotted with imshow
-#                     
-#                     # Subplot labels
-#                     # Add subplot label
-#                     axs[row, col].text(0.02, 0.95, subplot_labels[label_index], transform=axs[row, col].transAxes, fontsize=9, ha='left')
-#     
-#                     # Add row and column labels
-#                     if row == 0:
-#                         axs[row, col].set_title(scenarios[col], fontsize=10)
-#                     
-#     # Add the title and legend to the figure and show the figure
-#     fig.suptitle('Frequency of extreme events \n'.format(event_name),fontsize=10) #Plot title     
-#     
-#     # Discrete color bar legend
-#     fig.subplots_adjust(wspace=0.2)
-#     #cbar_ax = fig.add_axes([0.22, 0.05, 0.6, 0.015])
-#     cbar_ax = fig.add_axes([0.4, 0.05, 0.25, 0.015])
-#     
-#     cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='max', shrink = 0.3)  
-#     #cbar = fig.colorbar(plot, cax=cbar_ax, orientation='horizontal', extend='both', ticks=[0, 0.5, 1, 1.5, 2], shrink = 0.5)  #Plots the legend color bar   
-#     cbar.set_ticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
-#     cbar.ax.tick_params(labelsize=9) # Text size on legend color bar 
-#     cbar.set_label(label = 'Probability of occurrence', size = 9)
-# 
-# # =============================================================================
-# #     # Text outside the plot to display the scenario (top-center)
-# #     fig.text(0.5,0.935,'{}'.format(scenario_name), fontsize = 8, ha = 'center', va = 'center')
-# # =============================================================================
-# 
-#     #plt.tight_layout()
-#     
-#     # Change this directory to save the plots to your desired directory
-#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Frequency of all extremes under the different scenarios considering all impact models and their respective driving GCMs.pdf', dpi = 300)
-#     
-#     plt.show()
-#     
-#     #plt.close()
-#     
-#     return average_frequency_of_all_extreme_events
-# =============================================================================
-
-#%% Function for plotting the average frequency of all the extreme events
-# Function to calculate the difference between Present day and RCP6.0
-# =============================================================================
-# def calculate_difference(present, rcp60):
-#     difference = [rcp60[i] - present[i] for i in range(len(present))]
-#     # Mask zero values
-#     #difference = [np.ma.masked_equal(diff, 0) for diff in difference]
-#     return difference
-# 
-# =============================================================================
-# Function for plotting the length of spell of an extreme event
 def plot_average_frequency_of_extreme_events_considering_all_gcms_and_showing_all_extremes(average_frequency_of_all_extreme_events, list_of_extreme_events):
     
     list_of_extreme_event_names = []
@@ -2993,199 +2510,6 @@ def plot_cooccurrence_ratio_considering_all_gcms(average_cooccurrence_ratio_cons
         
     return average_cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms
 
-
-# =============================================================================
-# #%% Function for plotting the co-occurrence ratio in A SINGLE PLOT
-# def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_oceans):
-#     
-#     """ Plot a map showing the average co-occurrence ratio across cross category impact models driven by the same GCM such that a co-occurrence ratio > 1 means that there are more co-occurring extremes than isolated extremes, and a co-occurence ratio < 1 means that there are less co-occurring extremes than isolated ones.  
-#     
-#     Parameters
-#     ----------
-#     average_cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms : Xarray data array of the average co-occurrence ratio across cross category impact models driven by the same GCM. In the order of gcms = ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'], as stated at the beginning of this script
-#     
-#     Returns
-#     -------
-#     Plot (Figure) showing the propensity of an extreme event per location per scenario
-#     """
-#     
-#     #average_cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms = [[], [], [], []] # In the order of gcms = ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'], as stated at the beginning of this script
-#     
-#     # Setting the projection of the map to cylindrical / Mercator
-#     fig, axs = plt.subplots(2,2, figsize=(10, 6.5), subplot_kw = {'projection': ccrs.PlateCarree()})  # , constrained_layout=True
-#     
-#     # since axs is a 2 dimensional array of geozaxes, we have to flatten it into 1D; as explained on a similar example on this page: https://kpegion.github.io/Pangeo-at-AOES/examples/multi-panel-cartopy.html
-#     axs=axs.flatten()
-#     
-#     # Custom colormap: grey for NaN, followed by 'bwr' colormap for other values
-#     cmap = plt.cm.get_cmap('bwr')
-#     cmap.set_bad('none')  # Setting the color for NaN values
-#         
-#     scenarios =[0, 1, 2, 3]
-#     
-#     
-#     for scenario in scenarios:
-#         
-#         if scenario == 0:
-#             scenario_name = 'Early-industrial'
-#         if scenario == 1:
-#             scenario_name = 'Present-Day'
-#         if scenario == 2:
-#             scenario_name = 'RCP2.6'
-#         if scenario == 3:
-#             scenario_name = 'RCP6.0'
-# 
-#         
-#         # scenario data
-#         scenario_data = summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[scenario]
-#         
-#                 
-#         # Plot the co-occurrence of an extreme event per GCM in a subplot
-#         # plot = axs[scenario].imshow(scenario_data[0], origin = 'upper' , extent= map_extent, cmap = plt.cm.get_cmap('bwr'), vmin = 0, vmax =2)
-#         
-# # =============================================================================
-# #         # Create a mask identifying infinite values brought about by having no extreme events occurring in isolation in the scenarios, thus having only compound event occurring.
-# #         masked_array = xr.where(np.isinf(scenario_data[0]), 2, np.nan) # Here chose 2, because it is the limit of the legend(upper).
-# #         
-# # 
-# #         # Overlay the mask on the plot with hatch for infinite values
-# #         #axs[scenario].contourf(masked_array, colors ='red', origin='upper', extent=map_extent, alpha =1) 
-# #         contour = axs[scenario].contourf(masked_array, colors ='red', origin='upper', extent=map_extent, alpha =0.5) 
-# #         
-# #         #Add hatches for infinite values
-# #         axs[scenario].contourf(masked_array, hatches=['//'], colors='none', origin='upper', extent=map_extent, hatch_color='black')
-# # 
-# #         # Ensure the hatches are plotted after the filled contour plot
-# #         contour.collections[0].set_edgecolor('face')  # Ensure hatch lines have same color as fill
-# #         
-# #         # Add the background map to the plot  
-# #         #ax.stock_img() 
-# #               
-# # =============================================================================
-#         
-# 
-#         
-#         # Create a mask identifying infinite values brought about by having no extreme events occurring in isolation in the scenarios, thus having only compound event occurring.
-#         #masked_array = xr.where(np.isinf(scenario_data[0]), 2, scenario_data[0]) # Here chose 2, because it is the limit of the legend(upper).
-#         
-#         
-#         
-#         # Apply the mask for ocean areas
-#         masked_array_oceans =  np.ma.masked_where(np.isnan(mask_for_oceans), scenario_data[0])
-#         #masked_array_oceans =  xr.where(np.isnan(mask_for_oceans), np.nan, scenario_data[0])
-#         
-# # =============================================================================
-# #         # Create a base plot with grey for non-ocean areas
-# #         base_plot = np.ones_like(masked_array_oceans) * np.nan
-# #         base_plot[np.isfinite(masked_array_oceans)] = 1
-# # =============================================================================
-#         
-#         # Create a mask for 1s or NaNs
-#         base_mask = np.isnan(mask_for_oceans)
-#         
-#         # Create a base plot with grey for 1s or NaNs
-#         base_plot = np.where(base_mask, 1, np.nan)
-#         
-#         #axs[scenario].imshow(base_plot, origin='upper', extent=map_extent, cmap=mcolors.ListedColormap(['white']), alpha=1)
-#         
-#         # Handle non-finite values (both NaNs and Infs) in the data by masking them
-#         not_finite_mask = ~np.isfinite(masked_array_oceans)
-#         #masked_array = np.ma.masked_where(not_finite_mask, masked_array_oceans) # Mask non-finite values
-#         masked_array = xr.where(base_plot != np.nan ,scenario_data[0], np.nan)
-#         
-#         
-#         #masked_array = xr.where(np.isnan(masked_array), np.nan, scenario_data[0])
-#         
-#         # Create a mask identifying infinite values brought about by having no extreme events occurring in isolation in the scenarios, thus having only compound event occurring.
-#         # masked_array = xr.where(np.isinf(masked_array), 2, masked_array) # Here chose 2, because it is the limit of the legend(upper).
-#         
-#         # Overlay the mask on the plot with grey for NaN values
-#         #axs[scenario].imshow(np.isfinite(masked_array), origin='upper', extent=map_extent, cmap=mcolors.ListedColormap(['white']), alpha=1)
-#         
-#         # Plot the co-occurrence of an extreme event per GCM in a subplot
-#         plot = axs[scenario].imshow(masked_array, origin='upper', extent=map_extent, cmap=plt.cm.get_cmap('bwr'), vmin=0, vmax=2)
-#         
-#         # Plot the ocean areas as uncolored (NaN areas should remain uncolored)
-#         # Plot the ocean areas as uncolored (NaN areas should remain uncolored)
-#         #ocean_mask = np.isnan(mask_for_oceans)
-#         #axs[scenario].imshow(ocean_mask, origin='upper', extent=map_extent, cmap=mcolors.ListedColormap(['white']), alpha=1)
-#       
-#         
-# # =============================================================================
-# #         # Create a mask identifying infinite values
-# #         masked_array = np.ma.masked_where(np.isinf(scenario_data[0]), scenario_data[0])
-# #         
-# # =============================================================================
-#         
-#         # Overlay the mask on the plot with grey for NaN values
-#         #axs[scenario].imshow((np.isfinite(masked_array)), origin='upper', extent=map_extent, cmap=mcolors.ListedColormap(['white']), alpha=1)
-#         
-# 
-#         # Set the extent of the plotn
-#         axs[scenario].set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
-#         
-#         # Plot the coastlines along the continents on the map
-#         axs[scenario].coastlines(color='dimgrey', linewidth=0.7)
-#         
-#         # Plot features: lakes, rivers and boarders
-#         #axs[gcm].add_feature(cfeature.LAKES, alpha =0.5)
-#         #axs[gcm].add_feature(cfeature.RIVERS)
-#         #axs[gcm].add_feature(cfeature.OCEAN)
-#         axs[scenario].add_feature(cfeature.LAND, facecolor ='lightgrey')
-#         #ax.add_feature(cfeature.BORDERS, linestyle=':')
-#         
-#         
-# # =============================================================================
-# #         # Coordinates longitude and latitude ticks...These can be manipulated depending on study area chosen
-# #         xticks = [-180, -120, -60, 0, 60, 120, 180] # Longitudes
-# #         axs[gcm].set_xticks(xticks, crs=ccrs.PlateCarree()) 
-# #         axs[gcm].set_xticklabels(xticks, fontsize = 8)
-# #         
-# #         yticks = [90, 60, 30, 0, -30, -60]
-# #         axs[gcm].set_yticks(yticks, crs=ccrs.PlateCarree()) 
-# #         axs[gcm].set_yticklabels(yticks, fontsize = 8)
-# #         
-# #         lon_formatter = LongitudeFormatter()
-# #         lat_formatter = LatitudeFormatter()
-# #         axs[gcm].xaxis.set_major_formatter(lon_formatter)
-# #         axs[gcm].yaxis.set_major_formatter(lat_formatter)
-# #         
-# # =============================================================================
-#         
-#         # Remove borders
-#         axs[scenario].set_frame_on(False)        
-# 
-#         # Subplot labels
-#         # label
-#         subplot_labels = ['a.','b.','c.','d.']
-#         axs[scenario].text(0, 1.06, subplot_labels[scenario], transform=axs[scenario].transAxes, fontsize=9, ha='left')
-#        
-#         axs[scenario].set_title(scenario_name, fontsize = 9, loc = 'right')
-#            
-#        
-#     # Add the title and legend to the figure and show the figure
-#     fig.suptitle('Compound occurrence ratio',fontsize=10) #Plot title     
-#     
-#     # Discrete color bar legend
-#     fig.subplots_adjust(bottom=0.1, top=1.1, left=0.1, right=0.9, wspace=0.2, hspace=-0.5)
-#     cbar_ax = fig.add_axes([0.35, 0.2, 0.3, 0.02])
-#     cbar = fig.colorbar(plot, cax=cbar_ax, orientation='horizontal', extend='max', ticks=[0, 0.5, 1, 1.5, 2], shrink = 0.5)  #Plots the legend color bar   
-#     cbar.ax.tick_params(labelsize=9) # Text size on legend color bar 
-#     cbar.set_label(label = 'Co-occurrence ratio', size = 9)
-# 
-# 
-#     #plt.tight_layout()
-#     
-#     # Change this directory to save the plots to your desired directory
-#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Collective cooccurrence ratio under all scenarios from zero.pdf', dpi = 300)
-#     
-#     plt.show()
-#         
-#     #plt.close()
-#         
-#     return summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, masked_array, masked_array_oceans, base_plot
-# 
-# =============================================================================
 
 
 #%% Function for plotting the co-occurrence ratio in A SINGLE PLOT
@@ -5820,152 +5144,8 @@ def plot_percentage_contribution_of_probability_ratio_of_occurrence_of_two_extre
     return percentage_contribution_of_probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only
 
 
-#%%
 
-# =============================================================================
-# def plot_probability_ratios(
-#     average_pr_for_event_1, 
-#     average_pr_for_event_2, 
-#     average_pr_for_compound_events, 
-#     compound_events_names, 
-#     selected_indices
-# ):
-#     """
-#     Plot a map showing the probability ratios for selected compound events across different scenarios.
-#     
-#     Parameters
-#     ----------
-#     average_pr_for_event_1 : List of Xarray DataArrays
-#         Probability ratios for Event 1 across all scenarios.
-#     average_pr_for_event_2 : List of Xarray DataArrays
-#         Probability ratios for Event 2 across all scenarios.
-#     average_pr_for_compound_events : List of Xarray DataArrays
-#         Probability ratios for the compound events across all scenarios.
-#     compound_events_names : List of Strings
-#         Names of the compound events.
-#     selected_indices : List of integers
-#         Indices of the selected compound events to plot.
-#     event_names : List of tuples
-#         Tuples containing the names of the individual events in each pair.
-#     
-#     Returns
-#     -------
-#     None
-#     """
-#      
-#     # Scenarios for the plots
-#     scenarios = ['Present Day', 'RCP2.6', 'RCP6.0', 'RCP8.5']
-#     
-#     # Generate subplot labels
-#     subplot_labels = 'abcdefghijklmnopqrstuvwxyz'
-#     
-#     #Mapping event names to acronyms
-#     event_acronyms = {
-#         'floodedarea': 'RF',
-#         'driedarea': 'DR',
-#         'heatwavedarea': 'HW',
-#         'cropfailedarea': 'CF',
-#         'burntarea': 'WF',
-#         'tropicalcyclonedarea': 'TC'
-#     }
-#     
-#     list_of_compound_event_acronyms = []
-#     for compound_event in compound_events_names:
-#         event_1_name = event_acronyms.get(compound_event[0])
-#         event_2_name = event_acronyms.get(compound_event[1])
-#         compound_event_acronyms = '{} & {}'.format(event_1_name, event_2_name)
-#         list_of_compound_event_acronyms.append(compound_event_acronyms)
-#     
-#     selected_compound_events_names = [list_of_compound_event_acronyms[i] for i in selected_indices]
-#     
-#     for scenario_idx, scenario_name in enumerate(scenarios):
-#         fig, axs = plt.subplots(len(selected_indices), 3, figsize=(15, 10), subplot_kw={'projection': ccrs.PlateCarree()})
-#         axs = axs.flatten()
-#         
-#         for row_idx, index in enumerate(selected_indices):
-#             
-#             compound_event_name = selected_compound_events_names[row_idx]
-#             # Split the compound event name into individual event names
-#             event_1_name, event_2_name = compound_event_name.split(" & ")
-#             
-#             
-# # =============================================================================
-# #             # Titles personalized with actual event names
-# #             title_event_1 = f"Δ {event_1_name}"
-# #             title_event_2 = f"Δ {event_2_name}"
-# #             title_compound = f"Δ {compound_event_name}"
-# #             
-# #             titles = [title_event_1, title_event_2, title_compound]
-# # =============================================================================
-#             data = [
-#                 average_pr_for_event_1[scenario_idx][index],
-#                 average_pr_for_event_2[scenario_idx][index],
-#                 average_pr_for_compound_events[scenario_idx][index]
-#             ]
-#             
-# # =============================================================================
-# #             cmap = plt.cm.get_cmap('coolwarm')
-# #             norm = mpl.colors.TwoSlopeNorm(vmin=0.5, vcenter=1, vmax=1.5)
-# # =============================================================================
-#             
-# # =============================================================================
-# #             cmap = plt.cm.get_cmap('bwr')
-# #             norm = mpl.colors.Normalize(vmin=0, vmax=2)
-# # =============================================================================
-#             
-#             boundaries = [1, 2, 4, 6, 8, 10]
-#             n_colors = 6
-#             cmap = sns.color_palette('YlOrRd', n_colors=n_colors) # set color palette
-#             
-#             cmap = mcolors.ListedColormap(['cornflowerblue']+ [cmap[0]] + [cmap[1]]+ [cmap[2]]+ [cmap[3]] + [cmap[4]]+ ['darkred']) # manually select colors from palette
-#             norm = mcolors.BoundaryNorm(boundaries=boundaries, ncolors=len(boundaries)+1, extend='both')
-#             
-#             for col_idx in range(3):
-#                 ax = axs[row_idx * 3 + col_idx]
-#                 ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
-#                 ax.coastlines(color='dimgrey', linewidth=0.7)
-#                 ax.add_feature(cfeature.LAND, facecolor='lightgrey')
-#                 ax.spines['geo'].set_visible(False)
-#                 
-#                 plot = ax.imshow(
-#                     data[col_idx],
-#                     origin='lower',
-#                     extent=[-180, 180, 90, -60],
-#                     cmap=cmap,
-#                     norm=norm
-#                 )
-#                 
-#                 
-#                 # Titles personalized with actual event names
-#                 title_event_1 = f"Δ {event_1_name}"
-#                 title_event_2 = f"Δ {event_2_name}"
-#                 title_compound = f"Δ {compound_event_name}"
-#                 
-#                 titles = [title_event_1, title_event_2, title_compound]
-#                 
-#                 if row_idx == 0:
-#                     ax.set_title(titles[col_idx], fontsize=10)
-#                 
-#                 # Add subplot label
-#                 ax.text(0.02, 1.05, subplot_labels[row_idx * 3 + col_idx], transform=ax.transAxes, fontsize=9, va='top', ha='left')
-#         
-#         fig.subplots_adjust(wspace=0.1, hspace=0.3)
-#         cbar_ax = fig.add_axes([0.2, 0.05, 0.6, 0.02])
-#         cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='both')
-#         cbar.ax.tick_params(labelsize=9)
-#         cbar.set_label(label='Probability Ratio', size=9)
-#         
-#         fig.suptitle(f'Probability Ratios for {scenario_name}', fontsize=12)
-#         plt.savefig(f'C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/probability_ratios_main{scenario_name}.pdf', dpi=300)
-#         
-#         plt.show()
-#      
-#     return average_pr_for_compound_events
-# 
-# 
-# 
-# =============================================================================
-
+#%% Plotting Probability Ratios
 def plot_probability_ratios(
     average_pr_for_event_1, 
     average_pr_for_event_2, 
@@ -6037,34 +5217,7 @@ def plot_probability_ratios(
                 average_pr_for_compound_events[scenario_idx][index]
             ]
             
-# =============================================================================
-#             boundaries = [0.8, 2, 4, 6, 8, 10]
-#             n_colors = 6
-#             cmap = sns.color_palette('YlOrRd', n_colors=n_colors)  # set color palette
-#             
-#             cmap = mcolors.ListedColormap(['cornflowerblue']+ [cmap[0]] + [cmap[1]]+ [cmap[2]]+ [cmap[3]] + [cmap[4]]+ ['darkred'])  # manually select colors from palette
-#             norm = mcolors.BoundaryNorm(boundaries=boundaries, ncolors=len(boundaries)+1, extend='both')
-#             
-# =============================================================================
-# =============================================================================
-#             # Define more divisions between 0 and 1
-#             boundaries = [0, 0.2, 0.4, 0.6, 0.8, 1, 2, 4, 6, 8, 10]
-#             
-#             # Blue shades for values between 0 and 1
-#             blues = sns.color_palette("Blues", n_colors=5)  # 5 colors from dark to light blue
-#             # YlOrRd colors for values from 1 to 10
-#             ylorrd = sns.color_palette('YlOrRd', n_colors=5)  # Adjust this if you want more gradation
-#             
-#             # Combine the colors: dark blue at 0, light blue at 1, then YlOrRd from 1 onwards
-#             colors = blues + ylorrd
-#             
-#             # Create the colormap
-#             cmap = mcolors.ListedColormap(colors)
-#             
-#             # Normalize based on the new boundaries
-#             norm = mcolors.BoundaryNorm(boundaries=boundaries, ncolors=len(boundaries)-1, extend='upper')
-#             
-# =============================================================================
+
             # Define more divisions between 0 and 1
             boundaries = [0.1, 0.2, 0.4, 0.6, 0.8, 1, 2, 4, 6, 8, 10]
             
@@ -6140,7 +5293,7 @@ def plot_probability_ratios(
 
 
 
-
+#%% PR with hatches
 def plot_probability_ratios_with_hatches(
     average_pr_for_event_1, 
     average_pr_for_event_2, 
@@ -6367,34 +5520,6 @@ def plot_probability_ratios_second_selection(
                 average_pr_for_compound_events[scenario_idx][index]
             ]
             
-# =============================================================================
-#             boundaries = [0.8, 2, 4, 6, 8, 10]
-#             n_colors = 6
-#             cmap = sns.color_palette('YlOrRd', n_colors=n_colors)  # set color palette
-#             
-#             cmap = mcolors.ListedColormap(['cornflowerblue']+ [cmap[0]] + [cmap[1]]+ [cmap[2]]+ [cmap[3]] + [cmap[4]]+ ['darkred'])  # manually select colors from palette
-#             norm = mcolors.BoundaryNorm(boundaries=boundaries, ncolors=len(boundaries)+1, extend='both')
-#             
-# =============================================================================
-# =============================================================================
-#             # Define more divisions between 0 and 1
-#             boundaries = [0, 0.2, 0.4, 0.6, 0.8, 1, 2, 4, 6, 8, 10]
-#             
-#             # Blue shades for values between 0 and 1
-#             blues = sns.color_palette("Blues", n_colors=5)  # 5 colors from dark to light blue
-#             # YlOrRd colors for values from 1 to 10
-#             ylorrd = sns.color_palette('YlOrRd', n_colors=5)  # Adjust this if you want more gradation
-#             
-#             # Combine the colors: dark blue at 0, light blue at 1, then YlOrRd from 1 onwards
-#             colors = blues + ylorrd
-#             
-#             # Create the colormap
-#             cmap = mcolors.ListedColormap(colors)
-#             
-#             # Normalize based on the new boundaries
-#             norm = mcolors.BoundaryNorm(boundaries=boundaries, ncolors=len(boundaries)-1, extend='upper')
-#             
-# =============================================================================
             # Define more divisions between 0 and 1
             boundaries = [0.1, 0.2, 0.4, 0.6, 0.8, 1, 2, 4, 6, 8, 10]
             
@@ -6482,160 +5607,6 @@ def plot_probability_ratios_second_selection(
         plt.show()
      
     return average_pr_for_compound_events
-
-
-# =============================================================================
-# def plot_probability_ratios(
-#     average_pr_for_event_1, 
-#     average_pr_for_event_2, 
-#     average_pr_for_compound_events, 
-#     compound_events_names, 
-#     selected_indices
-# ):
-#     """
-#     Plot maps showing the Probability Ratios (PRs) for selected compound events and their individual components 
-#     across three main and three supplementary scenarios.
-#     
-#     Parameters
-#     ----------
-#     average_pr_for_event_1 : List of Xarray data arrays 
-#         The PR for the first event in the pair, across all GCMs and scenarios.
-#     average_pr_for_event_2 : List of Xarray data arrays 
-#         The PR for the second event in the pair, across all GCMs and scenarios.
-#     average_pr_for_compound_events : List of Xarray data arrays 
-#         The PR for the compound events, across all GCMs and scenarios.
-#     compound_events_names : List of Strings
-#         Names of the compound events.
-#     selected_indices : List of integers
-#         Indices of the selected compound events to plot.
-#     
-#     Returns
-#     -------
-#     Two plots: (1) Main scenarios and (2) Supplementary scenarios showing the PRs for individual events and their compound occurrences.
-#     """
-#     
-#     # Mapping event names to acronyms
-#     event_acronyms = {
-#         'floodedarea': 'RF',
-#         'driedarea': 'DR',
-#         'heatwavedarea': 'HW',
-#         'cropfailedarea': 'CF',
-#         'burntarea': 'WF',
-#         'tropicalcyclonedarea': 'TC'
-#     }
-#     
-#     list_of_compound_event_acronyms = []
-#     for compound_event in compound_events_names:
-#         event_1_name = event_acronyms.get(compound_event[0], compound_event[0])
-#         event_2_name = event_acronyms.get(compound_event[1], compound_event[1])
-#         compound_event_acronyms = '{} & {}'.format(event_1_name, event_2_name)
-#         list_of_compound_event_acronyms.append(compound_event_acronyms)
-#     
-#     selected_compound_events_names = [list_of_compound_event_acronyms[i] for i in selected_indices]
-#     
-#     # Scenarios for the main figure:
-#     scenarios_main = ['Present day', 'RCP6.0', 'RCP8.5']
-# 
-#     # Scenarios for the supplementary figure:
-#     scenarios_supplementary = ['Early-industrial', 'RCP2.6', 'RCP4.5']
-#     
-#     subplot_labels = 'abcdefghijklmnopqrstuvwxyz'
-# 
-#     # Set up the color map and normalization for the PRs
-#     cmap_pr = plt.cm.get_cmap('RdYlBu')
-#     norm_pr = mpl.colors.TwoSlopeNorm(vmin=0.5, vcenter=1, vmax=2)
-#     
-#     def plot_scenario_set(fig, axs, scenarios_data, title_prefix):
-#         for col in range(3):
-#             for row in range(len(selected_indices)):
-#                 index = row * 3 + col
-#                 ax = axs[index]
-#                 ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
-#                 ax.coastlines(color='dimgrey', linewidth=0.7)
-#                 ax.add_feature(cfeature.LAND, facecolor='lightgrey')
-#                 ax.spines['geo'].set_visible(False)  # Remove border
-#                 
-#                 if col == 0:
-#                     # Plot PR for event 1
-#                     plot = ax.imshow(
-#                         scenarios_data[col][0][selected_indices[row]], 
-#                         origin='lower', 
-#                         extent=[-180, 180, 90, -60], 
-#                         cmap=cmap_pr, 
-#                         norm=norm_pr
-#                     )
-#                 elif col == 1:
-#                     # Plot PR for event 2
-#                     plot = ax.imshow(
-#                         scenarios_data[col][1][selected_indices[row]], 
-#                         origin='lower', 
-#                         extent=[-180, 180, 90, -60], 
-#                         cmap=cmap_pr, 
-#                         norm=norm_pr
-#                     )
-#                 else:
-#                     # Plot PR for the compound event
-#                     plot = ax.imshow(
-#                         scenarios_data[col][2][selected_indices[row]], 
-#                         origin='lower', 
-#                         extent=[-180, 180, 90, -60], 
-#                         cmap=cmap_pr, 
-#                         norm=norm_pr
-#                     )
-#                
-#                 if row == 0:
-#                     ax.set_title(title_prefix + [' Event 1 PR', ' Event 2 PR', ' Compound Event PR'][col], fontsize=10)
-#                 if col == 0:
-#                     ax.text(-0.2, 0.5, selected_compound_events_names[row], transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
-#                 # Add subplot label
-#                 ax.text(0.02, 1.05, subplot_labels[index], transform=ax.transAxes, fontsize=9, va='top', ha='left')
-#             
-#         fig.subplots_adjust(wspace=0.1, hspace=-0.5)
-#         return fig
-# 
-#     # Prepare the data for the main and supplementary scenarios
-#     main_scenarios_data = [
-#         [average_pr_for_event_1[0], average_pr_for_event_2[0], average_pr_for_compound_events[0]],  # Present day
-#         [average_pr_for_event_1[2], average_pr_for_event_2[2], average_pr_for_compound_events[2]],  # RCP6.0
-#         [average_pr_for_event_1[3], average_pr_for_event_2[3], average_pr_for_compound_events[3]]   # RCP8.5
-#     ]
-#     
-#     supplementary_scenarios_data = [
-#         #[average_pr_for_event_1[0], average_pr_for_event_2[0], average_pr_for_compound_events[0]],  # Early-industrial
-#         [average_pr_for_event_1[1], average_pr_for_event_2[1], average_pr_for_compound_events[1]],  # RCP2.6
-#         #[average_pr_for_event_1[4], average_pr_for_event_2[4], average_pr_for_compound_events[4]]   # RCP4.5
-#     ]
-#     
-#     # Main figure plot
-#     fig_main, axs_main = plt.subplots(len(selected_indices), 3, figsize=(10, 8), subplot_kw={'projection': ccrs.PlateCarree()})
-#     fig_main = plot_scenario_set(fig_main, axs_main, main_scenarios_data, title_prefix="Main")
-# 
-#     # Colorbar for main figure
-#     cbar_ax_main = fig_main.add_axes([0.3, 0.18, 0.4, 0.015])
-#     cbar_main = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm_pr, cmap=cmap_pr), cax=cbar_ax_main, orientation='horizontal', extend='both')
-#     cbar_main.ax.tick_params(labelsize=9)
-#     cbar_main.set_label(label='Probability Ratio', size=9)
-#     
-#     # Save and show the main plot
-#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/probability_ratios_main.pdf', dpi=300)
-#     plt.show()
-#     
-#     # Supplementary figure plot
-#     fig_supp, axs_supp = plt.subplots(len(selected_indices), 3, figsize=(10, 8), subplot_kw={'projection': ccrs.PlateCarree()})
-#     fig_supp = plot_scenario_set(fig_supp, axs_supp, supplementary_scenarios_data, title_prefix="Supplementary")
-#     
-#     # Colorbar for supplementary figure
-#     cbar_ax_supp = fig_supp.add_axes([0.3, 0.18, 0.4, 0.015])
-#     cbar_supp = fig_supp.colorbar(mpl.cm.ScalarMappable(norm=norm_pr, cmap=cmap_pr), cax=cbar_ax_supp, orientation='horizontal', extend='both')
-#     cbar_supp.ax.tick_params(labelsize=9)
-#     cbar_supp.set_label(label='Probability Ratio', size=9)
-# 
-#     # Save and show the supplementary plot
-#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/probability_ratios_supplementary.pdf', dpi=300)
-#     plt.show()
-# 
-#     return fig_main, fig_supp
-# =============================================================================
 
 
 
@@ -7270,13 +6241,7 @@ def plot_dominant_compound_event_per_scenario_considering_all_gcms(scenarios_of_
     return scenarios_of_compound_events
 
 
-#%%
-
-import numpy as np
-import matplotlib.pyplot as plt
-import xarray as xr
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
+#%% Plotting most dominant compound event per scenario
 
 def plot_dominant_compound_event_per_scenario(
     scenarios_of_compound_events, 
@@ -7372,72 +6337,4 @@ def plot_dominant_compound_event_per_scenario(
     
     return scenarios_of_compound_events
 
-# =============================================================================
-# def plot_dominant_compound_event_per_scenario(
-#     average_frequency_of_all_compound_events, 
-#     compound_events_names
-# ):
-#     """
-#     Plot the most dominant compound event per scenario.
-#     
-#     Parameters
-#     ----------
-#     average_frequency_of_all_compound_events : List of Xarray data arrays 
-#         The average frequency of all possible combinations of extreme events considering 
-#         all the gcms and scenarios.
-#     compound_events_names : List of Strings
-#         Names of the compound events.
-#     
-#     Returns
-#     -------
-#     Plot (Figure) showing the most dominant compound event per scenario.
-#     """
-#     
-#     num_scenarios = len(average_frequency_of_all_compound_events)
-#     num_events = len(average_frequency_of_all_compound_events[0])
-#     
-#     dominant_events_per_scenario = []
-#     
-#     for scenario_idx in range(num_scenarios):
-#         scenario_data = average_frequency_of_all_compound_events[scenario_idx]
-#         
-#         # Stack the data along a new dimension for easy argmax computation
-#         stacked_scenario = xr.concat(scenario_data, dim='compound_event')
-#         
-#         # Handle all-NaN slices by filling them with a very low value
-#         filled_scenario = stacked_scenario.fillna(-np.inf)
-#         
-#         # Compute the indices of the dominant events
-#         dominant_event_indices = filled_scenario.argmax(dim='compound_event')
-#         
-#         # Mask the regions where the original data was all NaNs
-#         dominant_event_indices = dominant_event_indices.where(stacked_scenario.notnull().any(dim='compound_event'))
-#         
-#         dominant_events_per_scenario.append(dominant_event_indices)
-#     
-#     # Plotting
-#     fig, axs = plt.subplots(1, num_scenarios, figsize=(15, 8), subplot_kw={'projection': ccrs.PlateCarree()})
-#     
-#     for idx, ax in enumerate(axs):
-#         ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
-#         ax.coastlines(color='dimgrey', linewidth=0.7)
-#         ax.add_feature(cfeature.LAND, facecolor='lightgrey')
-#         
-#         plot = dominant_events_per_scenario[idx].plot.imshow(
-#             ax=ax, 
-#             add_colorbar=False, 
-#             cmap='tab20',
-#             vmin=0, 
-#             vmax=num_events - 1
-#         )
-#         
-#         ax.set_title(f'Scenario {idx+1}')
-#     
-#     plt.colorbar(plot, ax=axs, orientation='horizontal', fraction=0.046, pad=0.04, label='Dominant Compound Event')
-#     
-#     plt.show()
-# =============================================================================
-# =============================================================================
-# 
-#     return average_frequency_of_all_compound_events
-# =============================================================================
+

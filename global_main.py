@@ -774,7 +774,7 @@ selected_indices = [9, 11, 5, 1] # for the heatwaves and wildfires, heatwaves an
 plot_of_average_length_of_spells_for_selected_events = fn.plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_compound_extreme_events, compound_events_names, selected_indices)
 
 second_selected_indices = [2, 6, 13]# river floods and wildfires, droughts and wildfires and crop failures and wildfires pairs
-plot_of_average_length_of_spells_for_second_selected_events = fn.plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_compound_extreme_events, compound_events_names, second_selected_indices)
+plot_of_average_length_of_spells_for_second_selected_events = fn.plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes_second_plot(average_length_of_spells_for_all_compound_extreme_events, compound_events_names, second_selected_indices)
 
 
 #%% PLOT COMBINED EVENT OCCURRENCE/ frequency
@@ -1111,28 +1111,16 @@ for scenario in range(4):  # We have 4 scenarios excluding early industrial
         for gcm in probability_ratios_individual_event_1:
             data = gcm[scenario][i]
             if data is not None:
-# =============================================================================
-#                 if data.shape[0] == 50:  # If the first dimension is 50, likely a time dimension
-#                     data = data.mean(dim="time", skipna=True)  # Average over the time dimension
-# =============================================================================
                 gcm_data_event_1.append(data)
         
         for gcm in probability_ratios_individual_event_2:
             data = gcm[scenario][i]
             if data is not None:
-# =============================================================================
-#                 if data.shape[0] == 50:  # If the first dimension is 50, likely a time dimension
-#                     data = data.mean(dim="time", skipna=True)
-# =============================================================================
                 gcm_data_event_2.append(data)
         
         for gcm in probability_ratios_compound_events:
             data = gcm[scenario][i]
             if data is not None:
-# =============================================================================
-#                 if data.shape[0] == 50:  # If the first dimension is 50, likely a time dimension
-#                     data = data.mean(dim="time", skipna=True)
-# =============================================================================
                 gcm_data_compound.append(data)
         
         # Ensure there is data to average across
@@ -1205,7 +1193,7 @@ plot_probability_ratios_for_second_selected_events = fn.plot_probability_ratios_
 
 
 
-
+#%% SECOND OPTION TO PLOT PROBABILITY RATIOS
 # Initialize lists to store PRs and inf locations for compound events
 probability_ratios_individual_event_1 = []
 probability_ratios_individual_event_2 = []
@@ -1471,300 +1459,7 @@ plot_probability_ratios_for_second_selected_events = fn.plot_probability_ratios_
 
 
 
-
-
-
-
-
-# =============================================================================
-# 
-# # Initialize lists to store PRs and inf masks for individual and compound events
-# probability_ratios_individual_event_1 = []
-# probability_ratios_individual_event_2 = []
-# probability_ratios_compound_events = []
-# 
-# inf_locations_individual_event_1 = []
-# inf_locations_individual_event_2 = []
-# inf_locations_compound_events = []
-# 
-# for gcm in range(len(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario)):
-#     
-#     gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios = full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario[gcm]  # All GCM data on occurrence of extreme events
-#     
-#     pr_for_all_possible_combinations_and_GCM_per_scenario_event_1 = []
-#     pr_for_all_possible_combinations_and_GCM_per_scenario_event_2 = []
-#     pr_for_all_possible_combinations_and_GCM_per_scenario_compound = []
-#     
-#     inf_for_all_possible_combinations_and_GCM_per_scenario_event_1 = []
-#     inf_for_all_possible_combinations_and_GCM_per_scenario_event_2 = []
-#     inf_for_all_possible_combinations_and_GCM_per_scenario_compound = []
-#     
-#     for scenario in range(1, len(gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios)):  # Start from scenario 1 (skip early industrial)
-#         
-#         occurrence_of_extreme_events_considering_one_scenario = gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios[scenario]
-#         occurrence_of_extreme_events_in_early_industrial = gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios[0]  # Early industrial
-#         
-#         pr_for_event_1 = []
-#         pr_for_event_2 = []
-#         pr_for_compound_events = []
-#         
-#         inf_for_event_1 = []
-#         inf_for_event_2 = []
-#         inf_for_compound_events = []
-#         
-#         # Generate pairs of extreme events using the indices of the categories
-#         event_pairs = list(itertools.combinations(range(len(extreme_event_categories)), 2))
-#         
-#         for pair in event_pairs:
-#             index_1, index_2 = pair  # These are now indices, not event names
-#             
-#             event_1_name = extreme_event_categories[index_1]
-#             event_2_name = extreme_event_categories[index_2]
-#             
-#             if scenario == 4 and ('cropfailedarea' in [event_1_name, event_2_name]):
-#                 print("Empty map created for cropfailedarea in rcp8.5 scenario")
-#                 # Insert an empty map for pairs involving cropfailedarea in RCP8.5
-#                 empty_map = xr.full_like(occurrence_of_extreme_events_considering_one_scenario[0][0][0], fill_value=np.nan)
-#                 pr_for_event_1.append(empty_map)
-#                 pr_for_event_2.append(empty_map)
-#                 pr_for_compound_events.append(empty_map)
-#                 continue
-#             
-#             models_event_1 = occurrence_of_extreme_events_considering_one_scenario[index_1]
-#             models_event_2 = occurrence_of_extreme_events_considering_one_scenario[index_2]
-#             
-#             models_event_1_early = occurrence_of_extreme_events_in_early_industrial[index_1]
-#             models_event_2_early = occurrence_of_extreme_events_in_early_industrial[index_2]
-#             
-#             pr_across_impact_models_event_1 = None
-#             pr_across_impact_models_event_2 = None
-#             pr_across_impact_models_compound = None
-#             
-#             inf_mask_across_impact_models_event_1 = []
-#             inf_mask_across_impact_models_event_2 = []
-#             inf_mask_across_impact_models_compound = []
-#             
-#             # Pairing model_1 with model_1_early, and model_2 with model_2_early
-#             paired_models_event_1 = zip(models_event_1, models_event_1_early)
-#             paired_models_event_2 = zip(models_event_2, models_event_2_early)
-#             
-#             for (model_1, model_1_early), (model_2, model_2_early) in itertools.product(paired_models_event_1, paired_models_event_2):
-#                 # Calculate the occurrence of individual and compound events
-#                 occurrence_of_compound_events = fn.compound_event_occurrence(model_1, model_2)
-#                 occurrence_of_compound_events_early = fn.compound_event_occurrence(model_1_early, model_2_early)
-#                 
-#                 frequency_event_1 = fn.total_no_of_years_with_occurrence_of_extreme_event(model_1) / 50
-#                 frequency_event_1_early = fn.total_no_of_years_with_occurrence_of_extreme_event(model_1_early) / 50
-#                 
-#                 frequency_event_2 = fn.total_no_of_years_with_occurrence_of_extreme_event(model_2) / 50
-#                 frequency_event_2_early = fn.total_no_of_years_with_occurrence_of_extreme_event(model_2_early) / 50
-#                 
-#                 frequency_of_compound_events = fn.total_no_of_years_with_occurrence_of_extreme_event(occurrence_of_compound_events) / 50
-#                 frequency_of_compound_events_early = fn.total_no_of_years_with_occurrence_of_extreme_event(occurrence_of_compound_events_early) / 50
-#                 
-#                 # Calculate the PRs
-#                 pr_event_1 = frequency_event_1 / frequency_event_1_early
-#                 pr_event_2 = frequency_event_2 / frequency_event_2_early
-#                 pr_compound = ((frequency_of_compound_events / (frequency_event_1 * frequency_event_2)) /
-#                               (frequency_of_compound_events_early / (frequency_event_1_early * frequency_event_2_early)))
-#                 
-#                 # Store inf locations based on frequency == 0, using True/False masks
-#                 inf_mask_event_1 = (frequency_event_1_early == 0)
-#                 inf_mask_event_2 = (frequency_event_2_early == 0)
-#                 inf_mask_compound = (frequency_of_compound_events_early == 0)
-#                 
-#                 inf_mask_across_impact_models_event_1.append(inf_mask_event_1)
-#                 inf_mask_across_impact_models_event_2.append(inf_mask_event_2)
-#                 inf_mask_across_impact_models_compound.append(inf_mask_compound)
-#                 
-#                 # Handle inf values in the PR calculations
-#                 pr_event_1 = xr.where(np.isfinite(pr_event_1), pr_event_1, np.nan)
-#                 pr_event_2 = xr.where(np.isfinite(pr_event_2), pr_event_2, np.nan)
-#                 pr_compound = xr.where(np.isfinite(pr_compound), pr_compound, np.nan)
-#                 
-#                 # Store PRs
-#                 pr_for_event_1.append(pr_event_1)
-#                 pr_for_event_2.append(pr_event_2)
-#                 pr_for_compound_events.append(pr_compound)
-#             
-#             # After all models have been processed, calculate the most common occurrence of True/False per grid cell
-#             most_common_inf_event_1, _ = mode(np.array(inf_mask_across_impact_models_event_1), axis=0)
-#             most_common_inf_event_2, _ = mode(np.array(inf_mask_across_impact_models_event_2), axis=0)
-#             most_common_inf_compound, _ = mode(np.array(inf_mask_across_impact_models_compound), axis=0)
-#             
-#             most_common_inf_event_1 = most_common_inf_event_1.squeeze()
-#             most_common_inf_event_2 = most_common_inf_event_2.squeeze()
-#             most_common_inf_compound = most_common_inf_compound.squeeze()
-#             
-#             inf_for_event_1.append(most_common_inf_event_1)
-#             inf_for_event_2.append(most_common_inf_event_2)
-#             inf_for_compound_events.append(most_common_inf_compound)
-#         
-#         pr_for_all_possible_combinations_and_GCM_per_scenario_event_1.append(pr_for_event_1)
-#         pr_for_all_possible_combinations_and_GCM_per_scenario_event_2.append(pr_for_event_2)
-#         pr_for_all_possible_combinations_and_GCM_per_scenario_compound.append(pr_for_compound_events)
-#         
-#         inf_for_all_possible_combinations_and_GCM_per_scenario_event_1.append(inf_for_event_1)
-#         inf_for_all_possible_combinations_and_GCM_per_scenario_event_2.append(inf_for_event_2)
-#         inf_for_all_possible_combinations_and_GCM_per_scenario_compound.append(inf_for_compound_events)
-#     
-#     probability_ratios_individual_event_1.append(pr_for_all_possible_combinations_and_GCM_per_scenario_event_1)
-#     probability_ratios_individual_event_2.append(pr_for_all_possible_combinations_and_GCM_per_scenario_event_2)
-#     probability_ratios_compound_events.append(pr_for_all_possible_combinations_and_GCM_per_scenario_compound)
-# 
-#     inf_locations_individual_event_1.append(inf_for_all_possible_combinations_and_GCM_per_scenario_event_1)
-#     inf_locations_individual_event_2.append(inf_for_all_possible_combinations_and_GCM_per_scenario_event_2)
-#     inf_locations_compound_events.append(inf_for_all_possible_combinations_and_GCM_per_scenario_compound)
-# 
-# # Proceed with the calculation of averages and further processing
-# 
-# 
-# 
-# 
-# # Calculate the averages for each scenario across all GCMs
-# average_pr_for_event_1 = []
-# average_pr_for_event_2 = []
-# average_pr_for_compound_events = []
-# 
-# average_inf_for_event_1 = []
-# average_inf_for_event_2 = []
-# average_inf_for_compound_events = []
-# 
-# for scenario in range(4):  # We have 4 scenarios excluding early industrial
-#     averaged_scenario_event_1 = []
-#     averaged_scenario_event_2 = []
-#     averaged_scenario_compound = []
-#     
-#     averaged_inf_scenario_event_1 = []
-#     averaged_inf_scenario_event_2 = []
-#     averaged_inf_scenario_compound = []
-#     
-#     for i in range(15):  # 15 possible combinations of the 6 extreme events
-#         # Gather data across GCMs for the current scenario and event combination
-#         gcm_data_event_1 = []
-#         gcm_data_event_2 = []
-#         gcm_data_compound = []
-#         
-#         inf_data_event_1 = []
-#         inf_data_event_2 = []
-#         inf_data_compound = []
-#         
-#         for gcm_idx, gcm in enumerate(probability_ratios_individual_event_1):
-#             data_event_1 = gcm[scenario][i]
-#             inf_event_1 = inf_locations_individual_event_1[gcm_idx][scenario][i]
-#             
-#             if data_event_1 is not None:
-#                 gcm_data_event_1.append(data_event_1)
-#                 inf_data_event_1.append(inf_event_1)
-#         
-#         for gcm_idx, gcm in enumerate(probability_ratios_individual_event_2):
-#             data_event_2 = gcm[scenario][i]
-#             inf_event_2 = inf_locations_individual_event_2[gcm_idx][scenario][i]
-#             
-#             if data_event_2 is not None:
-#                 gcm_data_event_2.append(data_event_2)
-#                 inf_data_event_2.append(inf_event_2)
-#         
-#         for gcm_idx, gcm in enumerate(probability_ratios_compound_events):
-#             data_compound = gcm[scenario][i]
-#             inf_compound = inf_locations_compound_events[gcm_idx][scenario][i]
-#             
-#             if data_compound is not None:
-#                 gcm_data_compound.append(data_compound)
-#                 inf_data_compound.append(inf_compound)
-#         
-#         # Ensure there is data to average across
-#         if gcm_data_event_1:
-#             if all(data.shape == gcm_data_event_1[0].shape for data in gcm_data_event_1):
-#                 average_pr_across_gcms_event_1 = xr.concat(gcm_data_event_1, dim="gcm").mean(dim="gcm", skipna=True)
-#                 average_inf_across_gcms_event_1 = np.logical_or.reduce(inf_data_event_1)
-#             else:
-#                 print(f"Shape mismatch found in gcm_data_event_1 for scenario {scenario}, event combination {i}")
-#                 average_pr_across_gcms_event_1 = None
-#                 average_inf_across_gcms_event_1 = None
-#             averaged_scenario_event_1.append(average_pr_across_gcms_event_1)
-#             averaged_inf_scenario_event_1.append(average_inf_across_gcms_event_1)
-#         else:
-#             averaged_scenario_event_1.append(None)
-#             averaged_inf_scenario_event_1.append(None)
-#         
-#         if gcm_data_event_2:
-#             if all(data.shape == gcm_data_event_2[0].shape for data in gcm_data_event_2):
-#                 average_pr_across_gcms_event_2 = xr.concat(gcm_data_event_2, dim="gcm").mean(dim="gcm", skipna=True)
-#                 average_inf_across_gcms_event_2 = np.logical_or.reduce(inf_data_event_2)
-#             else:
-#                 print(f"Shape mismatch found in gcm_data_event_2 for scenario {scenario}, event combination {i}")
-#                 average_pr_across_gcms_event_2 = None
-#                 average_inf_across_gcms_event_2 = None
-#             averaged_scenario_event_2.append(average_pr_across_gcms_event_2)
-#             averaged_inf_scenario_event_2.append(average_inf_across_gcms_event_2)
-#         else:
-#             averaged_scenario_event_2.append(None)
-#             averaged_inf_scenario_event_2.append(None)
-#         
-#         if gcm_data_compound:
-#             if all(data.shape == gcm_data_compound[0].shape for data in gcm_data_compound):
-#                 average_pr_across_gcms_compound = xr.concat(gcm_data_compound, dim="gcm").mean(dim="gcm", skipna=True)
-#                 average_inf_across_gcms_compound = np.logical_or.reduce(inf_data_compound)
-#             else:
-#                 print(f"Shape mismatch found in gcm_data_compound for scenario {scenario}, event combination {i}")
-#                 average_pr_across_gcms_compound = None
-#                 average_inf_across_gcms_compound = None
-#             averaged_scenario_compound.append(average_pr_across_gcms_compound)
-#             averaged_inf_scenario_compound.append(average_inf_across_gcms_compound)
-#         else:
-#             averaged_scenario_compound.append(None)
-#             averaged_inf_scenario_compound.append(None)
-#     
-#     average_pr_for_event_1.append(averaged_scenario_event_1)
-#     average_pr_for_event_2.append(averaged_scenario_event_2)
-#     average_pr_for_compound_events.append(averaged_scenario_compound)
-#     
-#     average_inf_for_event_1.append(averaged_inf_scenario_event_1)
-#     average_inf_for_event_2.append(averaged_inf_scenario_event_2)
-#     average_inf_for_compound_events.append(averaged_inf_scenario_compound)
-# 
-# 
-# 
-# 
-# 
-# 
-# # Generate names of the compound events (in the same order as the calculations above)
-# compound_events_names = list(itertools.combinations(extreme_event_categories, 2))
-# 
-# selected_indices = [9, 11, 5, 1]  # Indices for selected compound events
-# 
-# # Function `plot_probability_ratios` that can handle three columns
-# plot_probability_ratios_for_selected_indices_main = fn.plot_probability_ratios_with_hatches(
-#     average_pr_for_event_1, 
-#     average_pr_for_event_2, 
-#     average_pr_for_compound_events, 
-#     compound_events_names, 
-#     selected_indices,
-#     average_inf_for_event_1, 
-#     average_inf_for_event_2, 
-#     average_inf_for_compound_events
-# )
-# 
-# 
-# 
-# second_selected_indices = [2, 6, 13]# river floods and wildfires, droughts and wildfires and crop failures and wildfires pairs
-# plot_probability_ratios_for_second_selected_events = fn.plot_probability_ratios_second_selection(
-#     average_pr_for_event_1, 
-#     average_pr_for_event_2, 
-#     average_pr_for_compound_events, 
-#     compound_events_names, 
-#     second_selected_indices
-# )
-# 
-# 
-# 
-# 
-# =============================================================================
-
-
-
-#%% NESTED (FOR) LOOP FOR PLOTTING COMPOUND EXTREME EVENT OCCURRENCE, PROBABILITY OF JOINT OCCURRENCE AND MAXIMUM NUMBER OF YEARS WITH CONSECUTIVE COMPOUND EVENTS considering different combinations and rcp scenarios
+#%% NESTED (FOR) LOOP FOR PLOTTING BOX PLOT COMPARISON OF OCCURRENCE PER EXTREME EVENT PAIR and warming scenarios
 
 # All 15 combinations of compound events and GCMS data on timeseries (50-year periods) of joint occurrence of compound events for all scenarios
 all_compound_event_combinations_and_gcms_timeseries_50_years_of_joint_occurrence_of_compound_events = []
@@ -1782,47 +1477,6 @@ for compound_event in compound_events:
     
     # All GCMS data on timeseries (50-year periods) of joint occurrence of compound events for all scenarios
     all_gcms_timeseries_50_years_of_joint_occurrence_of_compound_events = []
-    
-    # ============================================================================
-# =============================================================================
-#     # ============================================================================
-#     # Average number of years with compound events    
-#     average_no_of_years_with_compound_events_per_scenario_and_gcm = [[],[],[],[],[]] #  Where order of list is early industrial, present day, rcp 2.6, rcp6.0 and rcp 8.5
-#         
-#     # Length of spell with compound events (consecutive years with the compound events) 
-#     average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_per_scenario_and_gcm =  [[],[],[],[],[]] #  Where order of list is early industrial, present day, rcp 2.6, rcp6.0 and rcp 8.5    
-#     # =============================================================================
-#     #     ******************
-#     # =============================================================================        
-#     
-#     
-#     ## Extreme event occurrence per grid for a given scenario and given time period considering an ensemble of GCMs    
-#     
-#     average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models = [[],[],[],[],[]] # Where order of list is early industrial, present day, rcp 2.6, rcp6.0 and rcp 8.5
-#     average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models = [[],[],[],[],[]] # Where order of list is early industrial, present day, rcp 2.6, rcp6.0 and rcp 8.5
-#     average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models = [[],[],[],[],[]] # Where order of list is early industrial, present day, rcp 2.6, rcp6.0 and rcp 8.5
-# 
-# =============================================================================
-    
-# =============================================================================
-#     # Maximum number of years with consecutive join occurrence of an extreme event pair considering all impact models and all their respective driving GCMs
-#     average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models = [[],[],[],[],[]] # Where order of list is early industrial, present day, rcp 2.6, rcp6.0 and rcp 8.5
-# 
-# 
-#     # Full set (50-year time periods) of timeseries of occurrence of two extreme events for all scenarios and all GCMS
-#     full_set_of_timeseries_of_occurrence_of_two_extreme_events = []
-#     
-#     
-#     #
-#     gcms_timeseries_of_joint_occurrence_of_compound_events = []
-#     
-#     
-#     # List of bivariate distributions for constructing: One ellipse per GCM: 
-#     all_gcms_full_set_of_timeseries_of_occurrence_of_two_extreme_events = []
-#     
-#     
-#     
-# =============================================================================
     
     
     for gcm in gcms:
@@ -1857,35 +1511,10 @@ for compound_event in compound_events:
                 all_impact_model_data_about_no_of_years_with_compound_events_from_1861_until_1910 = [] # List with total no. of years with compound events accross the multiple impact models driven by the same GCM
                 all_impact_model_data_about_no_of_years_with_compound_events_from_1956_until_2005 = []
                 
-# =============================================================================
-#                 all_impact_model_data_about_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1861_until_1910 = [] # List with 95th quantile of length of spell with compound events accross the multiple impact models driven by the same GCM
-#                 all_impact_model_data_about_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1956_until_2005 = []
-#                 
-#                 
-#                 all_impact_model_data_about_maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910 = [] # List with maximum no. of years with consecutive compound events accross the multiple impact models driven by the same GCM
-#                 all_impact_model_data_about_maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005 = []
-#                 
-# =============================================================================
                 all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1861_until_1910 = [] # List with timeseries of occurrence compound events accross the multiple impact models driven by the same GCM               
                 all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1861_until_2005 = [] 
                 all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1956_until_2005 = []
                 
-                #gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events = [] # (driven by same GCM) full set (50-year time periods) of timeseries of occurrence of two extreme events for all scenarios
-                
-# =============================================================================
-#                 all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_1861_until_1910 = []
-#                 all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_1861_until_1910 = []
-#                 
-#                 all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_1956_until_2005 = []
-#                 all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_1956_until_2005 = []
-#                 
-# =============================================================================
-# =============================================================================
-#                 
-#                 early_industrial_time_gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events = []
-#                 present_day_gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events = []
-#                 
-# =============================================================================
                 
                 for cross_category_impact_model_pair in itertools.product(extreme_event_1_dataset[0], extreme_event_2_dataset[0]):    # Iteration function to achieve comparison of one impact model of extreme event 1 with another impact model of extreme event 2, whereby both impact models are driven by the same GCM
                     
@@ -1911,50 +1540,11 @@ for compound_event in compound_events:
                         no_of_years_with_compound_events_from_1861_until_1910 = fn.total_no_of_years_with_compound_event_occurrence(occurrence_of_compound_events_from_1861_until_1910)
                         all_impact_model_data_about_no_of_years_with_compound_events_from_1861_until_1910.append(no_of_years_with_compound_events_from_1861_until_1910) # Appended to the list above with total no. of years with compound events accross the multiple impact models driven by the same GCM
                         
-# =============================================================================
-#                         # LENGTH OF SPELL WITH COMPOUND EVENTS (CONSECUTIVE YEARS WITH COMPOUND EVENTS) such that the minimum length of a spells is 1, i.e. when you have a year with impact but no impacts the year before and after)
-#                         length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1861_until_1910 = fn.length_of_spell_with_occurrence_of_extreme_event(occurrence_of_compound_events_from_1861_until_1910)
-#                         # Remove zeros to ensure only length of spells is captured. Note: minimum length of a spells is 1, i.e. when you have a year with impact but no impacts the year before and after)
-#                         length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model_per_extreme_event_considering_only_occurrences_from_1861_until_1910 = xr.where(length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1861_until_1910 > 0, length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1861_until_1910, np.nan)
-#                         # 95th quantile of the length of spells
-#                         quantile_95th_of_length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1861_until_1910 = length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model_per_extreme_event_considering_only_occurrences_from_1861_until_1910.quantile(0.95, dim = 'time', skipna = True)                      
-#                         all_impact_model_data_about_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1861_until_1910.append(quantile_95th_of_length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1861_until_1910)
-#                         
-#                         # MAXIMUM NUMBER OF YEARS WITH CONSECUTIVE COMPOUND EVENTS IN SAME LOCATION
-#                         maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910 = fn.maximum_no_of_years_with_consecutive_compound_events(occurrence_of_compound_events_from_1861_until_1910)
-#                         all_impact_model_data_about_maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910.append(maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910)
-#                         
-# =============================================================================
+
                         #TIMESERIES OF AFFECTED AREA BY COMPOUND EVENT FROM 1861 UNTIL 1910 IN SCENARIO FOR EACH IMPACT MODEL IN THIS UNIQUE PAIR DRIVEN BY THE SAME GCM
                         timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_1861_until_1910 = fn.timeseries_fraction_of_area_affected(occurrence_of_compound_events_from_1861_until_1910, entire_globe_grid_cell_areas_in_xarray)
                         all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1861_until_1910.append(timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_1861_until_1910) 
                         
-# =============================================================================
-#                         #TIMESERIES OF AFFECTED AREA BY COMPOUND EVENT ACROSS THE FULL TIME SCALE IN SCENARIO FOR EACH IMPACT MODEL IN THIS UNIQUE PAIR DRIVEN BY THE SAME GCM
-#                         occurrence_of_compound_events_from_1861_until_2005 = fn.compound_event_occurrence(extreme_event_1_from_1861_until_2005, extreme_event_2_from_1861_until_2005) #returns True for locations with occurence of compound events within same location in same year
-#                         timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_1861_until_2005 = fn.timeseries_fraction_of_area_affected(occurrence_of_compound_events_from_1861_until_2005, entire_globe_grid_cell_areas_in_xarray)
-#                         
-#                         all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1861_until_2005.append(timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_1861_until_2005) # Appended to the list above with timeseries of occurrence compound events accross the multiple impact models driven by the same GCM & #to_array() changes it from a Dataset to a Dataarray
-#                         
-#                         # COMPARING OCCURRENCE OF EXTREME EVENT 1 WITH EXTREME EVENT 2
-#                         timeseries_of_occurrence_of_extreme_event_1 = fn.timeseries_fraction_of_area_affected(extreme_event_1_from_1861_until_1910, entire_globe_grid_cell_areas_in_xarray)                                               
-#                         timeseries_of_occurrence_of_extreme_event_2 = fn.timeseries_fraction_of_area_affected(extreme_event_2_from_1861_until_1910, entire_globe_grid_cell_areas_in_xarray)
-#                         
-#                         # add timeseries array to tuple: to full_set_of_timeseries_of_occurrence_of_two_extreme_events ****** NOTE: This variable hasnt been used yet, to be used for bivariate distribution later
-#                         timeseries_of_occurrence_of_two_extreme_events = fn.set_of_timeseries_of_occurrence_of_two_extreme_events(timeseries_of_occurrence_of_extreme_event_1, timeseries_of_occurrence_of_extreme_event_2)
-#                         early_industrial_time_gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events.append(timeseries_of_occurrence_of_two_extreme_events)
-#                         
-#                         # comparing timeseries of extreme event 1, event 2 and the joint occurrence of the two extremes 
-#                         comparison_plot = fn.plot_comparison_timeseries_fraction_of_area_affected_by_extreme_events(timeseries_of_occurrence_of_extreme_event_1, timeseries_of_occurrence_of_extreme_event_2, timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_1861_until_1910, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[0], gcm, scenario)
-#                         
-#                         # probability of occurrence of individual extreme events 1 and 2 (past timeperiod --> reference period for probability ratios)
-#                         probability_of_occurrence_of_extreme_event_1_from_1861_until_1910 = fn.probability_of_occurrence_of_extreme_event(extreme_event_1_from_1861_until_1910)
-#                         all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_1861_until_1910.append(probability_of_occurrence_of_extreme_event_1_from_1861_until_1910)
-#                         
-#                         probability_of_occurrence_of_extreme_event_2_from_1861_until_1910 = fn.probability_of_occurrence_of_extreme_event(extreme_event_2_from_1861_until_1910)
-#                         all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_1861_until_1910.append(probability_of_occurrence_of_extreme_event_2_from_1861_until_1910)
-#                         
-# =============================================================================
                 
  
                 
@@ -1979,47 +1569,10 @@ for compound_event in compound_events:
                         no_of_years_with_compound_events_from_1956_until_2005 = fn.total_no_of_years_with_compound_event_occurrence(occurrence_of_compound_events_from_1956_until_2005)
                         all_impact_model_data_about_no_of_years_with_compound_events_from_1956_until_2005.append(no_of_years_with_compound_events_from_1956_until_2005) # Appended to the list above with total no. of years with compound events accross the multiple impact models driven by the same GCM
                         
-# =============================================================================
-#                         # LENGTH OF SPELL WITH COMPOUND EVENTS (CONSECUTIVE YEARS WITH COMPOUND EVENTS) such that the minimum length of a spells is 1, i.e. when you have a year with impact but no impacts the year before and after)
-#                         length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1956_until_2005 = fn.length_of_spell_with_occurrence_of_extreme_event(occurrence_of_compound_events_from_1956_until_2005)
-#                         # Remove zeros to ensure only length of spells is captured. Note: minimum length of a spells is 1, i.e. when you have a year with impact but no impacts the year before and after)
-#                         length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model_per_extreme_event_considering_only_occurrences_from_1956_until_2005 = xr.where(length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1956_until_2005 > 0, length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1956_until_2005, np.nan)
-#                         # 95th quantile of the length of spells
-#                         quantile_95th_of_length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1956_until_2005 = length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model_per_extreme_event_considering_only_occurrences_from_1956_until_2005.quantile(0.95, dim = 'time', skipna = True)                      
-#                         all_impact_model_data_about_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1956_until_2005.append(quantile_95th_of_length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_1956_until_2005)
-#                                                 
-#                         # MAXIMUM NUMBER OF YEARS WITH CONSECUTIVE COMPOUND EVENTS IN SAME LOCATION
-#                         maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005 = fn.maximum_no_of_years_with_consecutive_compound_events(occurrence_of_compound_events_from_1956_until_2005)
-#                         all_impact_model_data_about_maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005.append(maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005)
-#                         
-# =============================================================================
                         #TIMESERIES OF AFFECTED AREA BY COMPOUND EVENT FROM 1956 UNTIL 2005 IN SCENARIO FOR EACH IMPACT MODEL IN THIS UNIQUE PAIR DRIVEN BY THE SAME GCM
                         timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_1956_until_2005 = fn.timeseries_fraction_of_area_affected(occurrence_of_compound_events_from_1956_until_2005, entire_globe_grid_cell_areas_in_xarray)
                         all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1956_until_2005.append(timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_1956_until_2005)                     
-                        
-# =============================================================================
-#                         # COMPARING OCCURRENCE OF EXTREME EVENT 1 WITH EXTREME EVENT 2
-#                         timeseries_of_occurrence_of_extreme_event_1 = fn.timeseries_fraction_of_area_affected(extreme_event_1_from_1956_until_2005, entire_globe_grid_cell_areas_in_xarray)
-#                         timeseries_of_occurrence_of_extreme_event_2 = fn.timeseries_fraction_of_area_affected(extreme_event_2_from_1956_until_2005, entire_globe_grid_cell_areas_in_xarray)
-#                         
-#                         # add timeseries array to tuple: to full_set_of_timeseries_of_occurrence_of_two_extreme_events
-#                         timeseries_of_occurrence_of_two_extreme_events = fn.set_of_timeseries_of_occurrence_of_two_extreme_events(timeseries_of_occurrence_of_extreme_event_1, timeseries_of_occurrence_of_extreme_event_2)
-#                         present_day_gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events.append(timeseries_of_occurrence_of_two_extreme_events)
-# # =============================================================================
-# =============================================================================
-#                         
-#                         # comparing timeseries of extreme event 1, event 2 and the joint occurrence of the two extremes 
-#                         comparison_plot = fn.plot_comparison_timeseries_fraction_of_area_affected_by_extreme_events(timeseries_of_occurrence_of_extreme_event_1, timeseries_of_occurrence_of_extreme_event_2, timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_1956_until_2005, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], gcm, scenario)
-# 
-#                         # probability of occurrence of individual extreme events 1 and 2 (during present day)
-#                         probability_of_occurrence_of_extreme_event_1_from_1956_until_2005 = fn.probability_of_occurrence_of_extreme_event(extreme_event_1_from_1956_until_2005)
-#                         all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_1956_until_2005.append(probability_of_occurrence_of_extreme_event_1_from_1956_until_2005)
-#                         
-#                         probability_of_occurrence_of_extreme_event_2_from_1956_until_2005 = fn.probability_of_occurrence_of_extreme_event(extreme_event_2_from_1956_until_2005)
-#                         all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_1956_until_2005.append(probability_of_occurrence_of_extreme_event_2_from_1956_until_2005)
-#                         
-# =============================================================================
-            
+                           
                 
                 
                 
@@ -2028,114 +1581,17 @@ for compound_event in compound_events:
                     print('No data available on occurrence of compound events for selected impact model and scenario during the period '+ time_periods_of_datasets[0] + '\n')
                 else:   
                     
-                    # THE AVERAGE TOTAL NO OF YEARS WITH COMPOUND EVENTS ACROSS THE MULTIPLE IMPACT MODELS DRIVEN BY THE SAME GCM
-# =============================================================================
-#                     average_no_of_years_with_compound_events_from_1861_until_1910 = xr.concat(all_impact_model_data_about_no_of_years_with_compound_events_from_1861_until_1910, dim='time').mean(dim='time', skipna= True)
-#                     plot_of_average_no_of_years_with_compound_events_from_1861_until_1910 = fn.plot_total_no_of_years_with_compound_event_occurrence(average_no_of_years_with_compound_events_from_1861_until_1910, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[0], gcm, scenario)
-#                     
-#                     average_no_of_years_with_compound_events_per_scenario_and_gcm[0].append(average_no_of_years_with_compound_events_from_1861_until_1910) # Append to list containing all data on occurrence per scenario and per GCM. # the index [0] represents the location for data during the Early-Industrial period
-#                     
-# =============================================================================
-# =============================================================================
-#                     average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1861_until_1910_per_gcm = xr.concat(all_impact_model_data_about_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1861_until_1910, dim = 'impact_models').mean(dim = 'impact_models', skipna = True)   
-#                     average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_per_scenario_and_gcm[0].append(average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1861_until_1910_per_gcm) # Append to list containing all data on occurrence per scenario and per GCM. # the index [0] represents the location for data during the Early-Industrial period
-#                     
-# =============================================================================
-# # =============================================================================
-#                     # THE AVERAGE PROBABILITY OF OCCURRENCE OF COMPOUND EVENTS FROM 1861 UNTIL 1910 ACCROSS THE MULTIPLE IMPACT MODELS DRIVEN BY THE SAME GCM
-#                     average_probability_of_occurrence_of_the_compound_events_from_1861_until_1910 = fn.plot_probability_of_occurrence_of_compound_events(average_no_of_years_with_compound_events_from_1861_until_1910, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[0], gcm, scenario)
-#                     average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[0].append(average_probability_of_occurrence_of_the_compound_events_from_1861_until_1910) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)                 
-#                                                     
-# # =============================================================================
-# =============================================================================
-#                     # AVERAGE MAXIMUM NUMBER OF YEARS WITH CONSECUTIVE COMPOUND EVENTS IN SAME LOCATION FROM 1861 UNTIL 1910 (PLOTTED)
-#                     average_maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910 = xr.concat(all_impact_model_data_about_maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910, dim='time').mean(dim='time', skipna= True)
-#                     plot_of_average_maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910 = fn.plot_maximum_no_of_years_with_consecutive_compound_events(average_maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[0], gcm, scenario)
-#                     # Append to list containing all results from all impact models and their driving GCMs
-#                     average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[0].append(average_maximum_no_of_years_with_consecutive_compound_events_from_1861_until_1910)
-#                     
-# =============================================================================
                     # FRACTION OF THE AREA AFFECTED BY COMPOUND EVENT ACROSS THE 50 YEAR TIME SCALE IN SCENARIO (**list for all the impact models)
                     timeseries_50_years_of_joint_occurrence_of_compound_events.append(all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1861_until_1910)
                     
-# =============================================================================
-#                     # FRACTION OF THE AREA AFFECTED BY COMPOUND EVENT ACROSS THE ENTIRE TIME SCALE IN SCENARIO (**list for all the impact models)
-#                     timeseries_of_joint_occurrence_of_compound_events.append(all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1861_until_2005)
-#                 
-# =============================================================================
-# =============================================================================
-#                 
-#                 # AVERAGE PROBABILITY OF OCCURRENCE OF INDIVIDUAL EXTREME EVENTS (DURING EARLY INDUSTRIAL PERIOD)
-#                 average_probability_of_occurrence_of_extreme_event_1_from_1861_until_1910_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_1861_until_1910, dim = 'models').mean(dim = 'models', skipna = True)
-#                 average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models[0].append(average_probability_of_occurrence_of_extreme_event_1_from_1861_until_1910_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                 
-#                 average_probability_of_occurrence_of_extreme_event_2_from_1861_until_1910_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_1861_until_1910, dim = 'models').mean(dim = 'models', skipna = True)
-#                 average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models[0].append(average_probability_of_occurrence_of_extreme_event_2_from_1861_until_1910_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                 
-# =============================================================================
-                
-                
                 
                 # AREA AFFECTED BY COMPOUND EVENT FROM 1956 UNTIL 2005 IN SCENARIO
                 if len(all_impact_model_data_about_no_of_years_with_compound_events_from_1956_until_2005) == 0: # checking for an empty array representing no data
                     print('No data available on occurrence of compound events for selected impact model and scenario during the period '+ time_periods_of_datasets[1] + '\n')
                 else:
                     
-# =============================================================================
-#                     # THE AVERAGE TOTAL NO OF YEARS WITH COMPOUND EVENTS ACROSS THE MULTIPLE IMPACT MODELS DRIVEN BY THE SAME GCM
-#                     average_no_of_years_with_compound_events_from_1956_until_2005 = xr.concat(all_impact_model_data_about_no_of_years_with_compound_events_from_1956_until_2005, dim='time').mean(dim='time', skipna= True)
-#                     plot_of_average_no_of_years_with_compound_events_from_1956_until_2005 = fn.plot_total_no_of_years_with_compound_event_occurrence(average_no_of_years_with_compound_events_from_1956_until_2005, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], gcm, scenario)
-#                     
-#                     average_no_of_years_with_compound_events_per_scenario_and_gcm[1].append(average_no_of_years_with_compound_events_from_1956_until_2005)  # Append to list containing all data on occurrence per scenario and per GCM. # the index [1] represents the location for data during the present-day period
-#                     
-# =============================================================================
-# =============================================================================
-#                     average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1956_until_2005_per_gcm = xr.concat(all_impact_model_data_about_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1956_until_2005, dim = 'impact_models').mean(dim = 'impact_models', skipna = True)   
-#                     average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_per_scenario_and_gcm[1].append(average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_1956_until_2005_per_gcm) # Append to list containing all data on occurrence per scenario and per GCM. # the index [1] represents the location for data during the present-day
-#                     
-# =============================================================================
-# =============================================================================
-#                     # THE AVERAGE PROBABILITY OF OCCURRENCE OF COMPOUND EVENTS FROM 1956 UNTIL 2005 ACCROSS THE MULTIPLE IMPACT MODELS DRIVEN BY THE SAME GCM
-#                     average_probability_of_occurrence_of_the_compound_events_from_1956_until_2005 = fn.plot_probability_of_occurrence_of_compound_events(average_no_of_years_with_compound_events_from_1956_until_2005, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], gcm, scenario)
-#                     average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[1].append(average_probability_of_occurrence_of_the_compound_events_from_1956_until_2005) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)                 
-#                                                     
-# =============================================================================
-                    # AVERAGE MAXIMUM NUMBER OF YEARS WITH CONSECUTIVE COMPOUND EVENTS IN SAME LOCATION FROM 1956 UNTIL 2005 (PLOTTED)
-# =============================================================================
-#                     average_maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005 = xr.concat(all_impact_model_data_about_maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005, dim='time').mean(dim='time', skipna= True)
-#                     plot_of_average_maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005 = fn.plot_maximum_no_of_years_with_consecutive_compound_events(average_maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], gcm, scenario)
-#                     # Append to list containing all results from all impact models and their driving GCMs
-#                     average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[1].append(average_maximum_no_of_years_with_consecutive_compound_events_from_1956_until_2005)
-#                     
-# =============================================================================
                     # FRACTION OF THE AREA AFFECTED BY COMPOUND EVENT ACROSS THE 50 YEAR TIME SCALE IN SCENARIO (**list for all the impact models)
                     timeseries_50_years_of_joint_occurrence_of_compound_events.append(all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_1956_until_2005)
-                    
-# =============================================================================
-#                 # AVERAGE PROBABILITY RATIO (PR) OF AVERAGE OCCURRENCE OF COMPOUND EVENTS FROM 1956 UNTIL 2005 COMPARED TO EVENTS FROM 1861 UNTIL 1910 (PLOTTED) ** average across all available impact models driven by the same GCM 
-#                 average_probability_ratio_of_occurrence_of_the_compound_events_from_1956_until_2005 = fn.plot_probability_ratio_of_occurrence_of_compound_events(average_probability_of_occurrence_of_the_compound_events_from_1956_until_2005, average_probability_of_occurrence_of_the_compound_events_from_1861_until_1910, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], gcm, scenario)
-#                     
-# =============================================================================
-                
-# =============================================================================
-#                 # Append list: Full set of timeseries (considering a pair/two extreme events) for all impact models driven by the same GCM 
-#                 # Early industrial time
-#                 gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events.append(early_industrial_time_gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events)    
-#                 # Present age
-#                 gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events.append(present_day_gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events)
-#                 
-# =============================================================================
-                
-# =============================================================================
-#                 # AVERAGE PROBABILITY OF OCCURRENCE OF INDIVIDUAL EXTREME EVENTS (DURING PRESENT DAY)
-#                 average_probability_of_occurrence_of_extreme_event_1_from_1956_until_2005_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_1956_until_2005, dim = 'models').mean(dim = 'models', skipna = True)
-#                 average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models[1].append(average_probability_of_occurrence_of_extreme_event_1_from_1956_until_2005_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                 
-#                 average_probability_of_occurrence_of_extreme_event_2_from_1956_until_2005_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_1956_until_2005, dim = 'models').mean(dim = 'models', skipna = True)
-#                 average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models[1].append(average_probability_of_occurrence_of_extreme_event_2_from_1956_until_2005_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                 
-#                 
-# =============================================================================
                 
 
                 
@@ -2188,363 +1644,25 @@ for compound_event in compound_events:
                         no_of_years_with_compound_events_from_2050_until_2099 = fn.total_no_of_years_with_compound_event_occurrence(occurrence_of_compound_events_from_2050_until_2099)                        
                         all_impact_model_data_about_no_of_years_with_compound_events_from_2050_until_2099.append(no_of_years_with_compound_events_from_2050_until_2099) # Appended to the list above with total no. of years with compound events accross the multiple impact models driven by the same GCM
                         
-# =============================================================================
-#                         # LENGTH OF SPELL WITH COMPOUND EVENTS (CONSECUTIVE YEARS WITH COMPOUND EVENTS) such that the minimum length of a spells is 1, i.e. when you have a year with impact but no impacts the year before and after)
-#                         length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_2050_until_2099 = fn.length_of_spell_with_occurrence_of_extreme_event(occurrence_of_compound_events_from_2050_until_2099)
-#                         # Remove zeros to ensure only length of spells is captured. Note: minimum length of a spells is 1, i.e. when you have a year with impact but no impacts the year before and after)
-#                         length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model_per_extreme_event_considering_only_occurrences_from_2050_until_2099 = xr.where(length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_2050_until_2099 > 0, length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_2050_until_2099, np.nan)
-#                         # 95th quantile of the length of spells
-#                         quantile_95th_of_length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_2050_until_2099 = length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model_per_extreme_event_considering_only_occurrences_from_2050_until_2099.quantile(0.95, dim = 'time', skipna = True)                      
-#                         all_impact_model_data_about_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_2050_until_2099.append(quantile_95th_of_length_of_spell_with_occurrence_of_compound_event_considering_one_impact_model_per_extreme_event_from_2050_until_2099)
-#                            
-#                         
-#                         # MAXIMUM NUMBER OF YEARS WITH CONSECUTIVE COMPOUND EVENTS IN SAME LOCATION
-#                         maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099 = fn.maximum_no_of_years_with_consecutive_compound_events(occurrence_of_compound_events_from_2050_until_2099)
-#                         all_impact_model_data_about_maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099.append(maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099)
-#                         
-# =============================================================================
                         # TIMESERIES OF AFFECTED AREA BY COMPOUND EVENT FROM 2050 UNTIL 2099 IN SCENARIO FOR EACH IMPACT MODEL IN THIS UNIQUE PAIR DRIVEN BY THE SAME GCM
                         timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_2050_until_2099 = fn.timeseries_fraction_of_area_affected(occurrence_of_compound_events_from_2050_until_2099, entire_globe_grid_cell_areas_in_xarray)
                         all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_2050_until_2099.append(timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_2050_until_2099)
                         
-# =============================================================================
-#                         #TIMESERIES OF AFFECTED AREA BY COMPOUND EVENT ACROSS THE FULL TIME SCALE IN SCENARIO FOR EACH IMPACT MODEL IN THIS UNIQUE PAIR DRIVEN BY THE SAME GCM
-#                         occurrence_of_compound_events_from_2006_until_2099 = fn.compound_event_occurrence(extreme_event_1_from_2006_until_2099, extreme_event_2_from_2006_until_2099) #returns True for locations with occurence of compound events within same location in same year
-#                         timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_2006_until_2099 = fn.timeseries_fraction_of_area_affected(occurrence_of_compound_events_from_2006_until_2099, entire_globe_grid_cell_areas_in_xarray)
-#                         
-#                         all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_2006_until_2099.append(timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_2006_until_2099) # Appended to the list above with timeseries of occurrence compound events accross the multiple impact models driven by the same GCM
-#                         
-#                         # COMPARING OCCURRENCE OF EXTREME EVENT 1 WITH EXTREME EVENT 2
-#                         timeseries_of_occurrence_of_extreme_event_1 = fn.timeseries_fraction_of_area_affected(extreme_event_1_from_2050_until_2099, entire_globe_grid_cell_areas_in_xarray)
-#                         timeseries_of_occurrence_of_extreme_event_2 = fn.timeseries_fraction_of_area_affected(extreme_event_2_from_2050_until_2099, entire_globe_grid_cell_areas_in_xarray)
-#                         
-#                         # add timeseries array to tuple: to full_set_of_timeseries_of_occurrence_of_two_extreme_events
-#                         timeseries_of_occurrence_of_two_extreme_events = fn.set_of_timeseries_of_occurrence_of_two_extreme_events(timeseries_of_occurrence_of_extreme_event_1, timeseries_of_occurrence_of_extreme_event_2)
-#                         end_of_century_gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events.append(timeseries_of_occurrence_of_two_extreme_events)
-#                         
-#                         # comparing timeseries of extreme event 1, event 2 and the joint occurrence of the two extremes 
-#                         comparison_plot = fn.plot_comparison_timeseries_fraction_of_area_affected_by_extreme_events(timeseries_of_occurrence_of_extreme_event_1, timeseries_of_occurrence_of_extreme_event_2, timeseries_of_fraction_of_area_with_occurrence_of_compound_events_from_2050_until_2099, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], gcm, scenario)     
-#                         
-#                         # probability of occurrence of individual extreme events 1 and 2
-#                         probability_of_occurrence_of_extreme_event_1_from_2050_until_2099 = fn.probability_of_occurrence_of_extreme_event(extreme_event_1_from_2050_until_2099)
-#                         all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099.append(probability_of_occurrence_of_extreme_event_1_from_2050_until_2099)
-#                                                 
-#                         probability_of_occurrence_of_extreme_event_2_from_2050_until_2099 = fn.probability_of_occurrence_of_extreme_event(extreme_event_2_from_2050_until_2099)
-#                         all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099.append(probability_of_occurrence_of_extreme_event_2_from_2050_until_2099)
-#                         
-# =============================================================================
                         
                 # AREA AFFECTED BY COMPOUND EVENT FROM 2050 UNTIL 2099 IN SCENARIO
                 if len(all_impact_model_data_about_no_of_years_with_compound_events_from_2050_until_2099) == 0: # checking for an empty array representing no data
                     print('No data available on occurrence of compound events for selected impact model and scenario during the period '+ time_periods_of_datasets[2] + '\n')
                 else:
-                    
-                    
-# =============================================================================
-#                     # THE AVERAGE TOTAL NO OF YEARS WITH COMPOUND EVENTS ACROSS THE MULTIPLE IMPACT MODELS DRIVEN BY THE SAME GCM
-#                     average_no_of_years_with_compound_events_from_2050_until_2099 = xr.concat(all_impact_model_data_about_no_of_years_with_compound_events_from_2050_until_2099, dim='time').mean(dim='time', skipna= True)
-#                     plot_of_average_no_of_years_with_compound_events_from_2050_until_2099 = fn.plot_total_no_of_years_with_compound_event_occurrence(average_no_of_years_with_compound_events_from_2050_until_2099, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], gcm, scenario)
-#                     
-# =============================================================================
-# =============================================================================
-#                     # AVERAGE MAXIMUM NUMBER OF YEARS WITH CONSECUTIVE COMPOUND EVENTS IN SAME LOCATION FROM 2050 UNTIL 2099 (PLOTTED)
-#                     average_maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099 = xr.concat(all_impact_model_data_about_maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099, dim='time').mean(dim='time', skipna= True)
-#                     plot_of_average_maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099 = fn.plot_maximum_no_of_years_with_consecutive_compound_events(average_maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], gcm, scenario)
-#                     
-#                     # 95th quantile of lenght of spell of compound events
-#                     average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_2050_until_2099_per_gcm = xr.concat(all_impact_model_data_about_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_2050_until_2099, dim = 'impact_models').mean(dim = 'impact_models', skipna = True)   
-#                     
-# =============================================================================
-# =============================================================================
-#                     # THE AVERAGE PROBABILITY OF OCCURRENCE OF COMPOUND EVENTS FROM 2050 UNTIL 2099 ACCROSS THE MULTIPLE IMPACT MODELS DRIVEN BY THE SAME GCM
-#                     average_probability_of_occurrence_of_the_compound_events_from_2050_until_2099 = fn.plot_probability_of_occurrence_of_compound_events(average_no_of_years_with_compound_events_from_2050_until_2099, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], gcm, scenario)
-#                     if scenario == 'rcp26' :
-#                         
-#                         average_no_of_years_with_compound_events_per_scenario_and_gcm[2].append(average_no_of_years_with_compound_events_from_2050_until_2099) # Append to list containing all data on occurrence per scenario and per GCM. # the index [2] represents the location for data during the end of century under RCP2.6
-#                         
-#                         average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[2].append(average_probability_of_occurrence_of_the_compound_events_from_2050_until_2099) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)    
-# # =============================================================================
-# =============================================================================
-#                         average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[2].append(average_maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099)
-#                         
-#                         average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_per_scenario_and_gcm[2].append(average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_2050_until_2099_per_gcm) # Append to list containing all data on occurrence per scenario and per GCM. # the index [2] represents the location for data during the RCP2.6
-#                         
-# =============================================================================
-# =============================================================================
-#                         
-#                     if scenario == 'rcp60' :
-#                         
-#                         average_no_of_years_with_compound_events_per_scenario_and_gcm[3].append(average_no_of_years_with_compound_events_from_2050_until_2099) # Append to list containing all data on occurrence per scenario and per GCM. # the index [3] represents the location for data during the end of century under RCP6.0
-#                         
-#                         average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[3].append(average_probability_of_occurrence_of_the_compound_events_from_2050_until_2099) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)                 
-# =============================================================================
-# =============================================================================
-#                         average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[3].append(average_maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099)
-#                         
-#                         average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_per_scenario_and_gcm[3].append(average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_2050_until_2099_per_gcm) # Append to list containing all data on occurrence per scenario and per GCM. # the index [3] represents the location for data during the RCP6.0
-#                         
-# =============================================================================
-# =============================================================================
-#                     if scenario == 'rcp85' :
-#                         
-#                         average_no_of_years_with_compound_events_per_scenario_and_gcm[4].append(average_no_of_years_with_compound_events_from_2050_until_2099) # Append to list containing all data on occurrence per scenario and per GCM. # the index [4] represents the location for data during the end of century under RCP8.5
-#                         
-#                         average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[4].append(average_probability_of_occurrence_of_the_compound_events_from_2050_until_2099) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)                 
-# # =============================================================================
-# =============================================================================
-#                         average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[4].append(average_maximum_no_of_years_with_consecutive_compound_events_from_2050_until_2099)
-#                         
-#                         average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_per_scenario_and_gcm[4].append(average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_from_2050_until_2099_per_gcm) # Append to list containing all data on occurrence per scenario and per GCM. # the index [4] represents the location for data during the RCP8.5
-#                     
-# =============================================================================
                     # FRACTION OF THE AREA AFFECTED BY COMPOUND EVENT ACROSS THE 50 YEAR TIME SCALE IN SCENARIO (**list for all the impact models)
                     timeseries_50_years_of_joint_occurrence_of_compound_events.append(all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_2050_until_2099)
                     
-# =============================================================================
-#                     # FRACTION OF THE AREA AFFECTED BY COMPOUND EVENT ACROSS THE ENTIRE TIME SCALE IN SCENARIO (**list for all the impact models)
-#                     timeseries_of_joint_occurrence_of_compound_events.append(all_impact_model_data_timeseries_of_occurrence_of_compound_events_from_2006_until_2099)
-#                 
-# =============================================================================
-                    
-# =============================================================================
-#                 # AVERAGE PROBABILITY RATIO (PR) OF AVERAGE OCCURRENCE OF COMPOUND EVENTS FROM 2050 UNTIL 2099 COMPARED TO EVENTS FROM 1861 UNTIL 1910 (PLOTTED) ** average across all available impact models driven by the same GCM 
-#                 average_probability_ratio_of_occurrence_of_the_compound_events_from_2050_until_2099 = fn.plot_probability_ratio_of_occurrence_of_compound_events(average_probability_of_occurrence_of_the_compound_events_from_2050_until_2099, average_probability_of_occurrence_of_the_compound_events_from_1861_until_1910, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], gcm, scenario)
-#                 
-# =============================================================================
-                
-# =============================================================================
-#                 gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events.append(end_of_century_gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events)
-#                             
-# =============================================================================
-                
-# =============================================================================
-#                 # AVERAGE PROBABILITY OF OCCURRENCE OF INDIVIDUAL EXTREME EVENTS (DURING THE END OF THE CENTURY)
-#                 if len(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099) == 0 or len(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099) == 0: # checking for an empty array representing no data
-#                     print('No data available on occurrence of compound events for selected impact model and scenario during the period '+ time_periods_of_datasets[2] + '\n')
-#                 else: 
-#                 
-#                     if scenario == 'rcp26': 
-#                     
-#                         average_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099, dim = 'models').mean(dim = 'models', skipna = True)
-#                         average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models[2].append(average_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                         
-#                         average_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099, dim = 'models').mean(dim = 'models', skipna = True)
-#                         average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models[2].append(average_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                         
-#                     if scenario == 'rcp60' :
-#                         
-#                         average_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099, dim = 'models').mean(dim = 'models', skipna = True)
-#                         average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models[3].append(average_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                         
-#                         average_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099, dim = 'models').mean(dim = 'models', skipna = True)
-#                         average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models[3].append(average_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                         
-#                         
-#                     if scenario == 'rcp85' :
-#                         
-#                         average_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099, dim = 'models').mean(dim = 'models', skipna = True)
-#                         average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models[4].append(average_probability_of_occurrence_of_extreme_event_1_from_2050_until_2099_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                         
-#                         average_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099_per_gcm = xr.concat(all_impact_model_data_on_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099, dim = 'models').mean(dim = 'models', skipna = True)
-#                         average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models[4].append(average_probability_of_occurrence_of_extreme_event_2_from_2050_until_2099_per_gcm) # Append list considering all GCMs, inorder to get the average probability across all GCMs (i.e. accross all impact models and their driving GCMs)
-#                         
-#                         
-# =============================================================================
                                    
         # COMPARISON OF ALL THE SCENARIOS PER PAIR OF EXTREME EVENTS
         
-# =============================================================================
-#         # Plot the timeseries showing the fraction of the total pixels affected by the joint occurrence of the compound events (set of two: extreme event 1 and 2) considering all impact models driven by the same GCM    
-#         plot_of_timeseries_of_joint_occurrence_of_compound_events = fn.plot_timeseries_fraction_of_area_affected_by_compound_events(timeseries_of_joint_occurrence_of_compound_events, extreme_event_1_name, extreme_event_2_name, gcm)
-#         
-# =============================================================================
         # Append all 4 GCMS (50-year) timeseries of compound events
         all_gcms_timeseries_50_years_of_joint_occurrence_of_compound_events.append(timeseries_50_years_of_joint_occurrence_of_compound_events)
         
-# =============================================================================
-#         # Append all 4 GCM SETS timeseries of occurrence of compound events (unique pair of extreme events). # To be used later for bivariate distribution
-#         gcms_timeseries_of_joint_occurrence_of_compound_events.append([timeseries_of_joint_occurrence_of_compound_events, gcm])
-#         
-#         
-#         
-#         # BIVARIATE DISTRUBUTION
-#         # Plot the pearson correlation coefficient considering fraction of total pixels affected by extreme event 1 and 2 in the same year
-#         plot_of_pearson_correlation_coefficient = fn.plot_correlation_with_spearmans_rank_correlation_coefficient(gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events, extreme_event_1_name, extreme_event_2_name, gcm)
-#         
-#         
-#         # append list of bivariate distributions for all gcms to one list
-#         all_gcms_full_set_of_timeseries_of_occurrence_of_two_extreme_events.append(gcm_full_set_of_timeseries_of_occurrence_of_two_extreme_events)
-#         
-# 
-# =============================================================================
-        
-        
-        # ANY OTHER INDICES
-        # ****** you can add any other desired indices here
-          
-        
-    # AVERAGE NUMBER OF YEARS WITH COMPOUND EVENTS PER SCENARIO AND DRIVING GCM
-    
-    #plot_average_no_of_years_with_compound_events_per_scenario_and_gcm = fnnnnnnnnnnnnnaverage_no_of_years_with_compound_events_per_scenario_and_gcm
-    
-# =============================================================================
-#     
-#     ## AVERAGE PROBABILITY RATIO
-#     
-#     # Probability Ratio for change in single extreme events (indiviually)   
-#     
-#     reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms = xr.concat(average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models[0], dim = 'models').mean(dim = 'models', skipna = True)
-#     
-#     reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms = xr.concat(average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models[0], dim = 'models').mean(dim = 'models', skipna = True)
-#     
-#     reference_period_average_probability_of_occurrence_of_compound_events = xr.concat(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[0], dim = 'models').mean(dim = 'models', skipna = True)
-#     
-#     for time_scenario in range(len(average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models)):
-#         
-#         scenario_considered = ['early-industrial', 'present day', 'rcp2.6', 'rcp6.0', 'rcp8.5']
-#         
-#         # Average probability of occurrence of compound events 
-#         # early industrial period
-#         plot_of_average_probability_of_occurrence_of_compund_events_from_1861_until_1910_considering_multi_model_ensembles = fn.plot_average_probability_of_occurrence_of_compound_events(reference_period_average_probability_of_occurrence_of_compound_events, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[0], scenario_considered[0])
-#         
-#         
-#         # Probability ratio
-#         if time_scenario != 0: # to avoid the early industrial period which is the reference period for the Probability Ratios for the other periods
-#             
-#             
-#             if len(average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models[time_scenario]) == 0 or len(average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models[time_scenario]) == 0 or len(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[time_scenario]) == 0 : # checking for an empty array representing no data
-#                 print('No data available on occurrence of compound events for selected impact model and scenario during the period ')
-#             else: 
-#                 
-#                 # Average probability of occurrence of compound events 
-#                 # present day
-#                 average_probability_of_occurrence_of_compound_events_from_1956_until_2005 = xr.concat(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[1], dim = 'models').mean(dim = 'models', skipna = True)
-#                 plot_of_average_probability_of_occurrence_of_compund_events_from_1956_until_2005_considering_multi_model_ensembles = fn.plot_average_probability_of_occurrence_of_compound_events(average_probability_of_occurrence_of_compound_events_from_1956_until_2005, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], scenario_considered[1])
-#                 # rcp26
-#                 average_probability_of_occurrence_of_compound_events_from_2050_until_2099_under_rcp26 = xr.concat(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[2], dim = 'models').mean(dim = 'models', skipna = True)
-#                 plot_of_average_probability_of_occurrence_of_compund_events_from_2050_until_2099_under_rcp26_considering_multi_model_ensembles = fn.plot_average_probability_of_occurrence_of_compound_events(average_probability_of_occurrence_of_compound_events_from_2050_until_2099_under_rcp26, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[2])
-#                 # rcp 60
-#                 average_probability_of_occurrence_of_compound_events_from_2050_until_2099_under_rcp60 = xr.concat(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[3], dim = 'models').mean(dim = 'models', skipna = True)
-#                 plot_of_average_probability_of_occurrence_of_compund_events_from_2050_until_2099_under_rcp60_considering_multi_model_ensembles = fn.plot_average_probability_of_occurrence_of_compound_events(average_probability_of_occurrence_of_compound_events_from_2050_until_2099_under_rcp60, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[3])
-#                 
-#                 if len(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[4]) != 0:
-#                     #rcp 85
-#                     average_probability_of_occurrence_of_compound_events_from_2050_until_2099_under_rcp85 = xr.concat(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[4], dim = 'models').mean(dim = 'models', skipna = True)
-#                     plot_of_average_probability_of_occurrence_of_compund_events_from_2050_until_2099_under_rcp85_considering_multi_model_ensembles = fn.plot_average_probability_of_occurrence_of_compound_events(average_probability_of_occurrence_of_compound_events_from_2050_until_2099_under_rcp85, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[4])
-#                    
-#                 
-#                 # PROBABILITY RATIO 
-#                 
-#                 # Due to Change in extreme event 1 only
-#                 average_probability_of_occurrence_of_extreme_event_1_across_the_gcms = xr.concat(average_probability_of_occurrence_of_extreme_event_1_considering_all_gcms_and_impact_models[time_scenario], dim = 'models').mean(dim = 'models', skipna = True)
-#                 if time_scenario == 1:
-#                     # for time period 1956_until_2005
-#                     probability_ratio_of_occurrence_of_extreme_event_1_only = fn.plot_probability_ratio_of_occurrence_of_an_extreme_event_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_1_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], scenario_considered[1])
-#                 if time_scenario == 2:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_extreme_event_1_only = fn.plot_probability_ratio_of_occurrence_of_an_extreme_event_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_1_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[2])
-#                 if time_scenario == 3:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_extreme_event_1_only = fn.plot_probability_ratio_of_occurrence_of_an_extreme_event_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_1_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[3])
-#                 if time_scenario == 4:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_extreme_event_1_only = fn.plot_probability_ratio_of_occurrence_of_an_extreme_event_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_1_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[4])
-#                 
-#             
-#                 
-#                 # Due to Change in extreme event 2 only
-#                 average_probability_of_occurrence_of_extreme_event_2_across_the_gcms = xr.concat(average_probability_of_occurrence_of_extreme_event_2_considering_all_gcms_and_impact_models[time_scenario], dim = 'models').mean(dim = 'models', skipna = True)
-#                 if time_scenario == 1:
-#                     # for time period 1956_until_2005
-#                     probability_ratio_of_occurrence_of_extreme_event_2_only = fn.plot_probability_ratio_of_occurrence_of_an_extreme_event_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_2_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms, extreme_event_2_name, extreme_event_1_name, time_periods_of_datasets[1], scenario_considered[1])
-#                 if time_scenario == 2:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_extreme_event_2_only = fn.plot_probability_ratio_of_occurrence_of_an_extreme_event_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_2_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms, extreme_event_2_name, extreme_event_1_name, time_periods_of_datasets[2], scenario_considered[2])
-#                 if time_scenario == 3:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_extreme_event_2_only = fn.plot_probability_ratio_of_occurrence_of_an_extreme_event_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_2_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms, extreme_event_2_name, extreme_event_1_name, time_periods_of_datasets[2], scenario_considered[3])
-#                 if time_scenario == 4:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_extreme_event_2_only = fn.plot_probability_ratio_of_occurrence_of_an_extreme_event_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_2_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms, extreme_event_2_name, extreme_event_1_name, time_periods_of_datasets[2], scenario_considered[4])
-#                 
-#                 
-#                 # Due to Change in dependence
-#                 average_probability_of_occurrence_of_compound_events = xr.concat(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models[time_scenario], dim = 'models').mean(dim = 'models', skipna = True)
-#                 if time_scenario == 1:
-#                     # for time period 1956_until_2005
-#                     probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only = fn.plot_probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_1_across_the_gcms, average_probability_of_occurrence_of_extreme_event_2_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms, average_probability_of_occurrence_of_compound_events, reference_period_average_probability_of_occurrence_of_compound_events, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], scenario_considered[1])
-#                 if time_scenario == 2:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only = fn.plot_probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_1_across_the_gcms, average_probability_of_occurrence_of_extreme_event_2_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms, average_probability_of_occurrence_of_compound_events, reference_period_average_probability_of_occurrence_of_compound_events, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[2])
-#                 if time_scenario == 3:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only = fn.plot_probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_1_across_the_gcms, average_probability_of_occurrence_of_extreme_event_2_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms, average_probability_of_occurrence_of_compound_events, reference_period_average_probability_of_occurrence_of_compound_events, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[3])
-#                 if time_scenario == 4:
-#                     # for time period 2050_until_2099
-#                     probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only = fn.plot_probability_ratio_of_occurrence_of_two_extreme_events_assuming_dependence_only_considering_all_gcms(average_probability_of_occurrence_of_extreme_event_1_across_the_gcms, average_probability_of_occurrence_of_extreme_event_2_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_1_only_across_the_gcms, reference_period_average_probability_of_occurrence_of_extreme_event_2_only_across_the_gcms, average_probability_of_occurrence_of_compound_events, reference_period_average_probability_of_occurrence_of_compound_events, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[4])
-#                                     
-#                 
-#             
-# =============================================================================
-    
-# =============================================================================
-#     # AVERAGE MAXIMUM NUMBER OF YEARS WITH JOINT OCCURRENCE OF EXTREME EVENTS
-#     for time_scenario in range(len(average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models)):
-#         
-#         scenario_considered = ['early-industrial', 'present day', 'rcp2.6', 'rcp6.0', 'rcp8.5']
-#         
-#         if len(average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[time_scenario]) == 0 : # checking for an empty array representing no data
-#             print('No data available on occurrence of compound events for selected impact model and scenario during the period')
-#         
-#         else:
-#             
-#             if time_scenario == 0:
-#                 # for time period 1861_until_1910
-#                 average_max_no_of_consecutive_years_with_compound_events_from_1861_until_1910 = xr.concat(average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[time_scenario], dim = 'models').mean(dim = 'models', skipna = True)
-#                 plot_of_average_max_no_of_consecutive_years_with_compound_events = fn.plot_average_maximum_no_of_years_with_consecutive_compound_events_considering_all_impact_models_and_their_driving_gcms(average_max_no_of_consecutive_years_with_compound_events_from_1861_until_1910, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[0], scenario_considered[time_scenario])
-#             
-#             if time_scenario == 1:
-#                 # for time period 1956_until_2005
-#                 average_max_no_of_consecutive_years_with_compound_events_from_1956_until_2005 = xr.concat(average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[time_scenario], dim = 'models').mean(dim = 'models', skipna = True)
-#                 plot_of_average_max_no_of_consecutive_years_with_compound_events = fn.plot_average_maximum_no_of_years_with_consecutive_compound_events_considering_all_impact_models_and_their_driving_gcms(average_max_no_of_consecutive_years_with_compound_events_from_1956_until_2005, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[1], scenario_considered[time_scenario])
-#             
-#             if time_scenario == 2:
-#                 # for time period 2050_until_2099
-#                 average_max_no_of_consecutive_years_with_compound_events_from_2050_until_2099_under_rcp26 = xr.concat(average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[time_scenario], dim = 'models').mean(dim = 'models', skipna = True)
-#                 plot_of_average_max_no_of_consecutive_years_with_compound_events = fn.plot_average_maximum_no_of_years_with_consecutive_compound_events_considering_all_impact_models_and_their_driving_gcms(average_max_no_of_consecutive_years_with_compound_events_from_2050_until_2099_under_rcp26, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[time_scenario])
-#             
-#             if time_scenario == 3:
-#                 # for time period 2050_until_2099
-#                 average_max_no_of_consecutive_years_with_compound_events_from_2050_until_2099_under_rcp60 = xr.concat(average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[time_scenario], dim = 'models').mean(dim = 'models', skipna = True)
-#                 plot_of_average_max_no_of_consecutive_years_with_compound_events = fn.plot_average_maximum_no_of_years_with_consecutive_compound_events_considering_all_impact_models_and_their_driving_gcms(average_max_no_of_consecutive_years_with_compound_events_from_2050_until_2099_under_rcp60, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[time_scenario])
-#             
-#             if time_scenario == 4:
-#                 # for time period 2050_until_2099
-#                 average_max_no_of_consecutive_years_with_compound_events_from_2050_until_2099_under_rcp85 = xr.concat(average_maximum_number_of_years_with_joint_occurrence_of_extreme_event_1_and_2_considering_all_gcms_and_impact_models[time_scenario], dim = 'models').mean(dim = 'models', skipna = True)
-#                 plot_of_average_max_no_of_consecutive_years_with_compound_events = fn.plot_average_maximum_no_of_years_with_consecutive_compound_events_considering_all_impact_models_and_their_driving_gcms(average_max_no_of_consecutive_years_with_compound_events_from_2050_until_2099_under_rcp85, extreme_event_1_name, extreme_event_2_name, time_periods_of_datasets[2], scenario_considered[time_scenario])
-#             
-#             
-# =============================================================================
-# =============================================================================
-#     # AVERAGE NUMBER OF YEARS WITH COMPOUND EVENTS
-#     plot_total_no_of_years_with_compound_event_occurrence = fn.plot_total_no_of_years_with_compound_event_occurrence_considering_all_gcms(average_no_of_years_with_compound_events_per_scenario_and_gcm, extreme_event_1_name, extreme_event_2_name, gcms)
-#     
-#     # AVERAGE PROBABILITY OF OCCURRENCE OF COMPOUND EVENTS
-#     plot_average_probability_of_occurrence_of_the_compound_events = fn.plot_probability_of_occurrence_of_compound_events_considering_all_gcms(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models, extreme_event_1_name, extreme_event_2_name, gcms)
-#     all_compound_event_combinations_and_gcms_average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models.append(average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models)
-#     
-#     # 95TH PERCENTILE OF LENGTH OF SPELL OF COMPOUND EVENTS
-#     plot_average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_events = fn.plot_average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_events_considering_all_gcms(average_95th_quantile_of_length_of_spell_with_occurrence_of_compound_event_per_scenario_and_gcm, extreme_event_1_name, extreme_event_2_name, gcms)      
-#     
-#     
-#     # BIVARIATE DISTRIBUTION CONSIDERING ALL GCMs
-#     
-#     bivariate_plot_considering_all_impact_models_per_gcm = fn.plot_correlation_with_spearmans_rank__correlation_coefficient_considering_scatter_points_from_all_impact_models(all_gcms_full_set_of_timeseries_of_occurrence_of_two_extreme_events, extreme_event_1_name, extreme_event_2_name, gcms)
-#     
-#     #considering all impact models and all their driving GCMs per extreme event    
-#     combined_bivariate_plot_considering_all_impact_models_and_all_their_driving_gcms = fn.plot_correlation_with_spearmans_rank_correlation_coefficient_considering_scatter_points_from_all_impact_models_and_all_gcms(all_gcms_full_set_of_timeseries_of_occurrence_of_two_extreme_events, extreme_event_1_name, extreme_event_2_name)
-#     
-# =============================================================================
+
     
     # BOX PLOT COMPARISON OF OCCURRENCE PER EXTREME EVENT PAIR
     
@@ -2562,106 +1680,6 @@ new_box = fn.comparison_boxplot(all_compound_event_combinations_and_gcms_timeser
 
 new_box_with_median_values_per_boxplot = fn.comparison_boxplot_with_median_values_per_boxplot(all_compound_event_combinations_and_gcms_timeseries_50_years_of_joint_occurrence_of_compound_events)
 
-
-
-
-
-#%% PLOT MOST DOMINANT COMPOUND EVENT PER SCENARIO 
-
-averaged_all_compound_event_combinations_and_gcms_average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models = []
-
-for compound_event in all_compound_event_combinations_and_gcms_average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models:
-        
-    averaged_all_compound_event_combinations_and_gcms_average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models_per_scenario = []
-    for gcm in compound_event:
-        
-        if len(gcm) == 0 : # checking for an empty array representing no data
-            print('No data available on occurrence of compound events for selected impact model and scenario during the period ')
-        else: 
-            
-            average_probability_across_gcms = xr.concat(gcm, dim='gcm_data').mean(dim='gcm_data', skipna= True)
-            averaged_all_compound_event_combinations_and_gcms_average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models_per_scenario.append(average_probability_across_gcms)
-        
-    averaged_all_compound_event_combinations_and_gcms_average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models.append(averaged_all_compound_event_combinations_and_gcms_average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models_per_scenario)
-
-scenarios_of_compound_events = [[],[],[],[],[]]
-for compound_event in averaged_all_compound_event_combinations_and_gcms_average_probability_of_occurrence_of_the_compound_events_considering_all_gcms_and_impact_models:
-    for scenario in range(len(compound_event)):
-        scenario_of_compound_event = compound_event[scenario]
-        scenarios_of_compound_events[scenario].append(scenario_of_compound_event)
-
-
-dominant_compound_event_per_scenario_considering_all_gcms = fn.plot_dominant_compound_event_per_scenario_considering_all_gcms(scenarios_of_compound_events, compound_events)
-
-
-
-# =============================================================================
-# stacked_arrays_c= xr.concat(scenarios_of_compound_events[2], dim='array')
-# all_zeros_mask = (stacked_arrays_c == 0).all(dim='array')
-# stacked_arrays_masked = xr.where(all_zeros_mask, np.nan, stacked_arrays_c)
-# 
-# # Find the index of the array with the maximum value at each grid point
-# filled_data_array_c = stacked_arrays_c.fillna(-9999) 
-# max_array_indices_unmasked_c = filled_data_array_c.argmax(dim='array')
-# max_array_indices_masked_c = xr.where((filled_data_array_c[0] == -9999), np.nan, max_array_indices_unmasked_c)
-# 
-# 
-# stacked_arrays_d= xr.concat(scenarios_of_compound_events[0], dim='array')
-# 
-# # Check if all values across different arrays at each grid point are equal to zero
-# all_zeros_mask = (stacked_arrays_d == 0).all(dim='array')
-# #stacked_arrays_masked = xr.where(all_zeros_mask, np.nan, stacked_arrays)
-# 
-# # Find the index of the array with the maximum value at each grid point
-# filled_data_array_d = stacked_arrays_d.fillna(-9999) # replace nan with -9999 because the xarray arg.max doesnt work with "All-NaN slice encountered"
-# max_array_indices_unmasked_d = filled_data_array_d.argmax(dim='array', skipna=True) # determine index of array with max value : https://docs.xarray.dev/en/stable/generated/xarray.DataArray.argmax.html
-# max_array_indices_unmasked_for_non_occurrences_d = xr.where(all_zeros_mask, np.nan, max_array_indices_unmasked_d)
-# max_array_indices_masked_d = xr.where((filled_data_array_d[0] == -9999), np.nan, max_array_indices_unmasked_for_non_occurrences_d) # return Nan values in the previous positions
-# 
-# plt.imshow(max_array_indices_masked_d)
-# 
-# plt.imshow(all_zeros_mask)
-# # =============================================================================
-# # 
-# # 
-# # # Find the index of the array with the maximum value at each grid point
-# # filled_data_array_d = stacked_arrays_d.fillna(-9999) 
-# # max_array_indices_unmasked_d = filled_data_array_d.argmax(dim='array')
-# # max_array_indices_masked_d = xr.where((filled_data_array_d[0] == -9999), np.nan, max_array_indices_unmasked_d)
-# # =============================================================================
-# 
-# # =============================================================================
-# # 
-# # is_value_present = 4 in max_array_indices_masked_d.values
-# # if 4 in is_value_present.value:
-# #     print(f"The value {value_to_check} exists in the DataArray.")
-# # =============================================================================
-# 
-# 
-# import cartopy.crs as ccrs
-# # Setting the projection of the map to cylindrical / Mercator
-# fig, axs = plt.subplots(2,2, figsize=(9, 6), subplot_kw = {'projection': ccrs.PlateCarree()})  # , constrained_layout=True
-# 
-# # since axs is a 2 dimensional array of geozaxes, we have to flatten it into 1D; as explained on a similar example on this page: https://kpegion.github.io/Pangeo-at-AOES/examples/multi-panel-cartopy.html
-# axs=axs.flatten()
-# 
-# for i in range(4):
-#     # Concatenate the arrays along a new dimension to create a new xarray dataset
-#     stacked_arrays = xr.concat(scenarios_of_compound_events[i], dim='array')
-#     
-#     # Find the index of the array with the maximum value at each grid point
-#     filled_data_array = stacked_arrays.fillna(-9999) 
-#     max_array_indices_unmasked = filled_data_array.argmax(dim='array')
-#     max_array_indices_masked = xr.where((filled_data_array[0] == -9999), np.nan, max_array_indices_unmasked)
-#     
-#     # Define the number of unique colors
-#     num_colors = 15
-#     
-#     # Choose a discrete colormap
-#     cmap = plt.cm.get_cmap('tab20', num_colors)
-#     
-#     axs[i].imshow(max_array_indices_masked, extent= [-180, 180, -60, 90])
-# =============================================================================
 
 # print total runtime of the code
 end_time=datetime.now()
