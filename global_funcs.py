@@ -2654,6 +2654,208 @@ def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_ave
         
     return summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios
 
+#%%
+def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot_including_rcp85(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_oceans):
+    
+    """ Plot a map showing the average co-occurrence ratio across cross category impact models driven by the same GCM such that a co-occurrence ratio > 1 means that there are more co-occurring extremes than isolated extremes, and a co-occurence ratio < 1 means that there are less co-occurring extremes than isolated ones.  
+    
+    Parameters
+    ----------
+    average_cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms : Xarray data array of the average co-occurrence ratio across cross category impact models driven by the same GCM. In the order of gcms = ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'], as stated at the beginning of this script
+    
+    Returns
+    -------
+    Plot (Figure) showing the propensity of an extreme event per location per scenario
+    """
+    
+    #average_cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms = [[], [], [], []] # In the order of gcms = ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'], as stated at the beginning of this script
+    
+# =============================================================================
+#     # Setting the projection of the map to cylindrical / Mercator
+#     fig, axs = plt.subplots(1,3, figsize=(12, 10), subplot_kw = {'projection': ccrs.PlateCarree()})  # , constrained_layout=True
+#     
+#     # since axs is a 2 dimensional array of geozaxes, we have to flatten it into 1D; as explained on a similar example on this page: https://kpegion.github.io/Pangeo-at-AOES/examples/multi-panel-cartopy.html
+#     axs=axs.flatten()
+#     
+#     # Custom colormap: grey for NaN, followed by 'bwr' colormap for other values
+#     cmap = plt.cm.get_cmap('bwr')
+#     cmap.set_bad('none')  # Setting the color for NaN values
+# =============================================================================
+        
+    scenarios =[0, 1, 2, 3, 4]
+    
+    scenarios_main = ['Present day', 'RCP6.0', 'Difference']
+    
+    scenarios_supplementary = ['Early-industrial', 'RCP2.6', 'RCP8.5']
+    
+    def calculate_difference_present_rcp60(present, rcp60):
+        difference = [rcp60[i] - present[i] if present[i] is not None and rcp60[i] is not None else None for i in range(len(present))]
+# =============================================================================
+#         difference = [
+#             np.where((np.isnan(present[i]) | np.isinf(present[i])), rcp60[i], rcp60[i] - present[i])
+#             if present[i] is not None and rcp60[i] is not None
+#             else None
+#             for i in range(len(present))
+#         ]
+# =============================================================================
+        
+        return difference
+    
+    # Calculate the difference between Present day and RCP6.0
+    difference = calculate_difference_present_rcp60(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[1], summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[3])
+    
+    main_scenarios_data = [summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[1], summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[3], difference]
+    
+    supplementary_scenarios_data = [summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[0], summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[2], summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[4]]
+    
+    # Setting the projection of the map to cylindrical / Mercator
+    fig_main, axs_main = plt.subplots(1, 3, figsize=(15, 5), subplot_kw={'projection': ccrs.PlateCarree()})
+    axs_main = axs_main.flatten()
+    
+    # Setting up the discrete color bar schemes
+    cmap_main = plt.cm.get_cmap('bwr')
+    norm_main = mpl.colors.Normalize(vmin=0, vmax=2)
+    
+    # Diverging color map for the difference plot
+    cmap_diff = plt.cm.get_cmap('PRGn')
+    norm_diff = mpl.colors.TwoSlopeNorm(vmin=-2, vcenter=0, vmax=2)
+    #boundaries = [0, 0.5, 1.0, 1.5, 2.0]
+    #norm_main = mpl.colors.BoundaryNorm(boundaries, cmap_main.N, extend='max')
+    
+    # Function to add maps to a figure
+    def add_maps_to_figure(fig, axs, scenarios, cmap, norm, data):
+        subplot_labels = 'abcdefghijklmnopqrstuvwx'
+        
+        for col in range(3):
+            for row in range(1):
+                index = row*3 + col
+                ax = axs[index]
+                ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+                ax.coastlines(color='dimgrey', linewidth=0.7)
+                ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+                ax.spines['geo'].set_visible(False)  # Remove border
+                if col == 2:  # Use coolwarm colormap for the difference column
+                    plot = ax.imshow(data[col][row], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_diff, norm=norm_diff)
+                else:  # Use the default colormap for the other columns
+                    plot = ax.imshow(data[col][row], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_main, norm=norm_main)
+                
+                    
+                ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
+                if row == 0:
+                    ax.set_title(scenarios[col], fontsize=10)
+        
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        cbar_ax_main = fig.add_axes([0.35, 0.27, 0.15, 0.02])
+        cbar_main = fig.colorbar(mpl.cm.ScalarMappable(norm=norm_main, cmap=cmap_main), cax=cbar_ax_main, orientation='horizontal', extend='max', ticks=[0, 0.5, 1, 1.5, 2])
+        cbar_main.ax.tick_params(labelsize=9)
+        cbar_main.set_label(label='Co-occurrence ratio', size=9)
+        
+        # Add a colorbar specifically for the difference plot
+        cbar_ax_diff = fig.add_axes([0.60, 0.27, 0.15, 0.02])
+        cbar_diff = fig.colorbar(mpl.cm.ScalarMappable(norm=norm_diff, cmap=cmap_diff), cax=cbar_ax_diff, orientation='horizontal', extend='both')
+        cbar_diff.ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{x:.1f}'))
+        cbar_diff.ax.tick_params(labelsize=9)
+        cbar_diff.set_label(label='Difference in Co-occurrence ratio', size=9)    
+        
+   
+    add_maps_to_figure(fig_main, axs_main, scenarios_main, cmap_main, norm_main, main_scenarios_data)
+    fig_main.suptitle('Frequency of extreme events - Main Scenarios', fontsize=12)
+    plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Co_occurrence_ratio_main_scenarios.pdf', dpi=300)
+    plt.show()
+    plt.close()
+    
+    
+    fig_supp, axs_supp = plt.subplots(1, 3, figsize=(15, 5), subplot_kw={'projection': ccrs.PlateCarree()})
+    axs_supp = axs_supp.flatten()
+    def add_maps_to_sup_figure(fig, axs, scenarios, cmap, norm, data):
+        subplot_labels = 'abcdefghijklmnopqrstuvwx'
+        
+        for col in range(3):
+            for row in range(1):
+                index = row * 3 + col
+                ax = axs[index]
+                ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+                ax.coastlines(color='dimgrey', linewidth=0.7)
+                ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+                ax.spines['geo'].set_visible(False)  # Remove border
+                plot = ax.imshow(data[col][row], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_main, norm=norm_main)
+
+                  
+                ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
+                if row == 0:
+                    ax.set_title(scenarios[col], fontsize=10)
+
+        
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        cbar_ax_main = fig.add_axes([0.45, 0.27, 0.15, 0.02])
+        cbar_main = fig.colorbar(mpl.cm.ScalarMappable(norm=norm_main, cmap=cmap_main), cax=cbar_ax_main, orientation='horizontal', extend='max', ticks=[0, 0.5, 1, 1.5, 2])
+        cbar_main.ax.tick_params(labelsize=9)
+        cbar_main.set_label(label='Co-occurrence ratio', size=9)
+        
+        
+    
+    add_maps_to_sup_figure(fig_supp, axs_supp, scenarios_supplementary, cmap_main, norm_main, supplementary_scenarios_data)
+    fig_supp.suptitle('Frequency of extreme events - Supplementary Scenarios', fontsize=12)
+    plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Co_occurrence_ratio_supplementary_scenarios.pdf', dpi=300)
+    plt.show()
+    plt.close()
+    
+    
+
+        
+    return summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios
+
+#%%
+def plot_compound_event_occurrences_changes(total_average_compound_event_occurrence):
+    """
+    Plots the compound event occurrences across different scenarios with customization options.
+    
+    Parameters:
+    - total_average_compound_event_occurrence: List containing values for each scenario [Early-industrial, Present day, RCP2.6, RCP6.0, RCP8.5]
+    """
+    # Extract individual scenario values
+    early_industrial = total_average_compound_event_occurrence[0]
+    present_day = total_average_compound_event_occurrence[1]
+    future_scenarios = total_average_compound_event_occurrence[2:]
+
+    # Set colors
+    dot_colors = [(0.996, 0.89, 0.569), (0.996, 0.769, 0.31), (0.996, 0.6, 0.001), (0.851, 0.373, 0.0549), (0.6, 0.204, 0.016)]
+    
+    # The scenarios and their corresponding x positions
+    scenarios = ['Early-industrial', 'Present day', 'Future Scenarios']
+    x_positions = [0, 1, 2]
+    rcp_offsets = [0, 0, 0]  # Small offsets for RCP2.6, RCP6.0, RCP8.5 within the "Future Scenarios" point
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+
+    # Plot individual data points
+    plt.plot(x_positions[0], early_industrial, 'o', color=dot_colors[0], label='Early-industrial')
+    plt.text(0.2, early_industrial, f'{early_industrial:.2f}', fontsize=9, ha='right', va='bottom')
+
+    plt.plot(x_positions[1], present_day, 'o', color=dot_colors[1], label='Present day')
+    plt.text(1.2, present_day, f'{present_day:.2f}', fontsize=9, ha='right', va='bottom')
+
+    # Plot the future scenarios with offsets for RCP2.6, RCP6.0, and RCP8.5
+    future_labels = ['RCP2.6', 'RCP6.0', 'RCP8.5']
+    for i, offset in enumerate(rcp_offsets):
+        x_pos = x_positions[2] + offset
+        plt.plot(x_pos, future_scenarios[i], 'o', color=dot_colors[i + 2], label=future_labels[i])
+        plt.text(1.97, future_scenarios[i], f'{future_scenarios[i]:.2f}', fontsize=9, ha='right', va='bottom')
+
+    # Customize the plot
+    plt.xticks(x_positions, scenarios)
+    plt.xlabel('Scenarios')
+    plt.ylabel('Total Average Compound Event Occurrence')
+    plt.title('Total Average Compound Event Occurrence Across Scenarios')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/total_average_compound_event_occurrence.pdf', dpi = 300)
+    
+
+    # Show the plot
+    plt.show()
+
 #%% Function for plotting the 95th percentile of length of spell of extreme event
 def plot_95th_percentile_of_length_of_spell_of_extreme_events_considering_all_gcms(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_gcms, extreme_event_categories, gcms):
     

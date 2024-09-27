@@ -467,10 +467,86 @@ for extreme_event_occurrence in range(len(occurrence_of_extreme_event_considerin
 # CO-OCCURRENCE RATIO FOR EXTREME EVENTS considering all scenarios mapped on a single plot
 
 # Calculating co-occurrence ratio
-summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
+# =============================================================================
+# summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
+# 
+# total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
+# total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
+# 
+# for gcm in range(len(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario)):
+#     
+#     gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios = full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario[gcm] # All GCM data on occurrence of all extreme eventws==s
+#         
+#     for scenario in range(len(gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios)):
+#         
+#         occurrence_of_extreme_events_considering_one_scenario = gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios[scenario]
+#         
+#         if scenario == 4:
+#             
+#             print('No data available on occurrence of crop failures for selected impact model during the period '+ time_periods_of_datasets[2] + ' under RCP 8.5 \n')
+#         
+#         else: 
+#             
+#             cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_per_scenario = []
+#             
+#             total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = []
+#             total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario =[]
+#             
+#             # Iteration function to achieve comparison between the different impact models driven by the same GCM and for the different extreme events
+#             for cross_category_impact_models_for_all_extreme_events in itertools.product(*occurrence_of_extreme_events_considering_one_scenario): # the asterisk * unpacks all the sublits under 'occurrence_of_extreme_events_considering_one_scenario' here being impact models of occurences for each extreme event under same scenario and GCM
+#                 
+#                 #extreme_event_not_occurring = 0 # Recall zero (0) in a grid represents an extreme event not occurring that year within the grid cell
+#                 #extreme_event_occurring = 1 # Recall one (1) in a grid represents an extreme event occurring that year within the grid cell
+#                 
+#                 # Total number of extreme events occurring in a grid cell per year
+#                 total_number_of_extreme_events_occurring_per_year = xr.concat(cross_category_impact_models_for_all_extreme_events, dim='impact_models').sum(dim='impact_models',skipna=True)
+#                 
+#                 # Total number of extreme events occurring in isolation. Thus were only one extreme event per grid cell per year occurs
+#                 extreme_events_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year == 1, 1, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0)) # Return 1 where an extreme event occurred in one grid cell in isolation per year and 0 where more than one extreme event occurred in the same year
+#                 total_number_of_extreme_events_occurring_in_isolation = xr.concat(extreme_events_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)
+#                 #total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_occurring_in_isolation)
+#                 total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_occurring_in_isolation)
+#                 
+#                 # Total number of extreme events occurring not in isolation. Thus we consider where more than extreme event occurs in a grid cell per year
+#                 extreme_events_not_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year > 1, total_number_of_extreme_events_occurring_per_year, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0))
+#                 total_number_of_extreme_events_not_occurring_in_isolation = xr.concat(extreme_events_not_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)                                
+#                 #total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_not_occurring_in_isolation)
+#                 total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_not_occurring_in_isolation)
+#              
+#             
+#             average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
+#             total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
+# 
+#             average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
+#             total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
+#             
+# average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
+# for scenario in total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios:
+#     average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
+#     average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs)
+# 
+# average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
+# for scenario in total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios:
+#     average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
+#     average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs)
+# 
+#     
+# for i in range(4): # Calculating average co-occurrence ratio for all the scenarios
+#     average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = fn.cooccurrence_ratio(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[i], average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[i])
+#     summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[i].append(average_cooccurrence_ratio_considering_all_GCMs_and_scenarios)
+# 
+# plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot = fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_historical_data[0])           
+# 
+# 
+# =============================================================================
 
-total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
-total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
+
+# Calculating co-occurrence ratio
+import gc
+summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0,  RCP8.5
+
+total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0, RCP8.5
+total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0, RCP8.5
 
 for gcm in range(len(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario)):
     
@@ -479,46 +555,52 @@ for gcm in range(len(full_dataset_occurrence_of_extreme_events_considering_all_g
     for scenario in range(len(gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios)):
         
         occurrence_of_extreme_events_considering_one_scenario = gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios[scenario]
+                 
+        cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_per_scenario = []
         
-        if scenario == 4:
-            
-            print('No data available on occurrence of crop failures for selected impact model during the period '+ time_periods_of_datasets[2] + ' under RCP 8.5 \n')
+        total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = []
+        total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario =[]
         
-        else: 
+        # Iteration function to achieve comparison between the different impact models driven by the same GCM and for the different extreme events
+        for cross_category_impact_models_for_all_extreme_events in itertools.product(*occurrence_of_extreme_events_considering_one_scenario): # the asterisk * unpacks all the sublits under 'occurrence_of_extreme_events_considering_one_scenario' here being impact models of occurences for each extreme event under same scenario and GCM
             
-            cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_per_scenario = []
+            #extreme_event_not_occurring = 0 # Recall zero (0) in a grid represents an extreme event not occurring that year within the grid cell
+            #extreme_event_occurring = 1 # Recall one (1) in a grid represents an extreme event occurring that year within the grid cell
             
-            total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = []
-            total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario =[]
+            # Total number of extreme events occurring in a grid cell per year
+            total_number_of_extreme_events_occurring_per_year = xr.concat(cross_category_impact_models_for_all_extreme_events, dim='impact_models').sum(dim='impact_models',skipna=True)
             
-            # Iteration function to achieve comparison between the different impact models driven by the same GCM and for the different extreme events
-            for cross_category_impact_models_for_all_extreme_events in itertools.product(*occurrence_of_extreme_events_considering_one_scenario): # the asterisk * unpacks all the sublits under 'occurrence_of_extreme_events_considering_one_scenario' here being impact models of occurences for each extreme event under same scenario and GCM
-                
-                #extreme_event_not_occurring = 0 # Recall zero (0) in a grid represents an extreme event not occurring that year within the grid cell
-                #extreme_event_occurring = 1 # Recall one (1) in a grid represents an extreme event occurring that year within the grid cell
-                
-                # Total number of extreme events occurring in a grid cell per year
-                total_number_of_extreme_events_occurring_per_year = xr.concat(cross_category_impact_models_for_all_extreme_events, dim='impact_models').sum(dim='impact_models',skipna=True)
-                
-                # Total number of extreme events occurring in isolation. Thus were only one extreme event per grid cell per year occurs
-                extreme_events_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year == 1, 1, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0)) # Return 1 where an extreme event occurred in one grid cell in isolation per year and 0 where more than one extreme event occurred in the same year
-                total_number_of_extreme_events_occurring_in_isolation = xr.concat(extreme_events_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)
-                #total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_occurring_in_isolation)
-                total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_occurring_in_isolation)
-                
-                # Total number of extreme events occurring not in isolation. Thus we consider where more than extreme event occurs in a grid cell per year
-                extreme_events_not_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year > 1, total_number_of_extreme_events_occurring_per_year, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0))
-                total_number_of_extreme_events_not_occurring_in_isolation = xr.concat(extreme_events_not_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)                                
-                #total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_not_occurring_in_isolation)
-                total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_not_occurring_in_isolation)
-             
+            # Total number of extreme events occurring in isolation. Thus were only one extreme event per grid cell per year occurs
+            extreme_events_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year == 1, 1, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0)) # Return 1 where an extreme event occurred in one grid cell in isolation per year and 0 where more than one extreme event occurred in the same year
+            total_number_of_extreme_events_occurring_in_isolation = xr.concat(extreme_events_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)
+            del extreme_events_occurring_in_isolation
+            gc.collect()
+            #total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_occurring_in_isolation)
+            total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_occurring_in_isolation.astype('float32'))
+            del total_number_of_extreme_events_occurring_in_isolation
+            gc.collect()
             
-            average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
-            total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
+            # Total number of extreme events occurring not in isolation. Thus we consider where more than extreme event occurs in a grid cell per year as a compound pair.
+            extreme_events_not_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year > 1, 1, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0))
+            total_number_of_extreme_events_not_occurring_in_isolation = xr.concat(extreme_events_not_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)
+            del extreme_events_not_occurring_in_isolation 
+            gc.collect()                             
+            #total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_not_occurring_in_isolation)
+            total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_not_occurring_in_isolation.astype('float32'))
+            del total_number_of_extreme_events_not_occurring_in_isolation
+            gc.collect()
+         
+            
+        average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
+        del total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario
+        gc.collect()
+        total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
 
-            average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
-            total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
-            
+        average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
+        del total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario
+        gc.collect()
+        total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
+        
 average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
 for scenario in total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios:
     average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
@@ -530,12 +612,16 @@ for scenario in total_number_of_extreme_events_not_occurring_in_isolation_consid
     average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs)
 
     
-for i in range(4): # Calculating average co-occurrence ratio for all the scenarios
+for i in range(5): # Calculating average co-occurrence ratio for all the scenarios
     average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = fn.cooccurrence_ratio(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[i], average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[i])
     summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[i].append(average_cooccurrence_ratio_considering_all_GCMs_and_scenarios)
 
-plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot = fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_historical_data[0])           
+plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot = fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot_including_rcp85(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_historical_data[0])           
 
+
+# Total average compound event occurrences accross all the GCMs and scenarios. # in order: [Early-indutrial, Present day, RCP2.6, RCP6.0, RCP8.5]
+total_average_compound_event_occurrence = [array.sum().item() for array in average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios]
+plot_total_average_compound_event_occurrence = fn.plot_compound_event_occurrences_changes(total_average_compound_event_occurrence)
 
 
 
