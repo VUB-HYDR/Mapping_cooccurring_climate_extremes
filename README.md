@@ -3,7 +3,7 @@ This code further builds onto previous scripts from [Muheki et al., 2024](https:
 
 ## Python Scripts
 This repository includes two python scripts used in this anaylsis, namely:
-### 1. [global_funcs.py](https://github.com/VUB-HYDR/Mapping_cooccurring_climate_extremes/blob/2187e31f54a9cfee04d5dd43c73fb65042b6157d/global_funcs.py)
+### 1. [global_funcs.py](https://github.com/VUB-HYDR/Mapping_cooccurring_climate_extremes/blob/8270ec060e750d3585b661fe9fedfabe62e32b3a/global_funcs.py)
 This python script enntails all the functions used in this analysis. Users should first run this script, before running the main.py.
 
 ### 2. [global_main.py](https://github.com/VUB-HYDR/Mapping_cooccurring_climate_extremes/blob/e1a68755f54b0a06de084047ce6782e68152b632/global_main.py) 
