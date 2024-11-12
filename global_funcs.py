@@ -5425,7 +5425,7 @@ def plot_probability_ratios(
             
             # Create a custom colormap
             # Blue shades for values between 0.1 and 1
-            blues = sns.color_palette("Blues", n_colors=6)  # 5 colors from dark to light blue
+            blues = sns.color_palette("Blues", n_colors=6)[::-1]  # 5 colors from dark to light blue
             # YlOrRd colors for values from 1 to 10
             ylorrd = sns.color_palette('YlOrRd', n_colors=6)  # Adjust this if you want more gradation
             
@@ -5493,6 +5493,151 @@ def plot_probability_ratios(
      
     return data
 
+#%%
+def plot_probability_ratios_for_second_selected_events(
+    average_pr_for_event_1, 
+    average_pr_for_event_2, 
+    average_pr_for_compound_events, 
+    compound_events_names, 
+    selected_indices
+):
+    """
+    Plot a map showing the probability ratios for selected compound events across different scenarios.
+    
+    Parameters
+    ----------
+    average_pr_for_event_1 : List of Xarray DataArrays
+        Probability ratios for Event 1 across all scenarios.
+    average_pr_for_event_2 : List of Xarray DataArrays
+        Probability ratios for Event 2 across all scenarios.
+    average_pr_for_compound_events : List of Xarray DataArrays
+        Probability ratios for the compound events across all scenarios.
+    compound_events_names : List of Strings
+        Names of the compound events.
+    selected_indices : List of integers
+        Indices of the selected compound events to plot.
+    event_names : List of tuples
+        Tuples containing the names of the individual events in each pair.
+    
+    Returns
+    -------
+    None
+    """
+     
+    # Scenarios for the plots
+    scenarios = ['Present Day', 'RCP2.6', 'RCP6.0', 'RCP8.5']
+    
+    # Generate subplot labels
+    subplot_labels = 'abcdefghijklmnopqrstuvwxyz'
+    
+    # Mapping event names to acronyms
+    event_acronyms = {
+        'floodedarea': 'RF',
+        'driedarea': 'DR',
+        'heatwavedarea': 'HW',
+        'cropfailedarea': 'CF',
+        'burntarea': 'WF',
+        'tropicalcyclonedarea': 'TC'
+    }
+    
+    list_of_compound_event_acronyms = []
+    for compound_event in compound_events_names:
+        event_1_name = event_acronyms.get(compound_event[0])
+        event_2_name = event_acronyms.get(compound_event[1])
+        compound_event_acronyms = '{} & {}'.format(event_1_name, event_2_name)
+        list_of_compound_event_acronyms.append(compound_event_acronyms)
+    
+    selected_compound_events_names = [list_of_compound_event_acronyms[i] for i in selected_indices]
+    
+    for scenario_idx, scenario_name in enumerate(scenarios):
+        fig, axs = plt.subplots(len(selected_indices), 3, figsize=(15, 10), subplot_kw={'projection': ccrs.PlateCarree()})
+        axs = axs.reshape(len(selected_indices), 3)  # Reshape axs to 2D array for easy indexing
+        
+        for row_idx, index in enumerate(selected_indices):
+            
+            compound_event_name = selected_compound_events_names[row_idx]
+            # Split the compound event name into individual event names
+            event_1_name, event_2_name = compound_event_name.split(" & ")
+            
+            data = [
+                average_pr_for_event_1[scenario_idx][index],
+                average_pr_for_event_2[scenario_idx][index],
+                average_pr_for_compound_events[scenario_idx][index]
+            ]
+            
+
+            # Define more divisions between 0 and 1
+            boundaries = [0.1, 0.2, 0.4, 0.6, 0.8, 1, 2, 4, 6, 8, 10]
+            
+            # Create a custom colormap
+            # Blue shades for values between 0.1 and 1
+            blues = sns.color_palette("Blues", n_colors=6)[::-1]  # 5 colors from dark to light blue
+            # YlOrRd colors for values from 1 to 10
+            ylorrd = sns.color_palette('YlOrRd', n_colors=6)  # Adjust this if you want more gradation
+            
+            # Combine the colors: light blue at 0.1, light blue at 1, then YlOrRd from 1 onwards
+            colors = blues + ylorrd
+            
+            # Create the colormap
+            cmap = mcolors.ListedColormap(colors)
+            
+            # Normalize based on the new boundaries
+            norm = mcolors.BoundaryNorm(boundaries=boundaries, ncolors=13, extend='both')
+            
+            
+            
+            for col_idx in range(3):
+                ax = axs[row_idx, col_idx]
+                ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+                ax.coastlines(color='dimgrey', linewidth=0.7)
+                #ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+                if scenario_name == 'RCP8.5' and ('CF' in [event_1_name, event_2_name]):
+                    ax.add_feature(cfeature.LAND, facecolor='none', edgecolor='lightgrey', hatch='///')
+                else:
+                    ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+                ax.spines['geo'].set_visible(False)
+                
+                plot = ax.imshow(
+                    data[col_idx],
+                    origin='lower',
+                    extent=[-180, 180, 90, -60],
+                    cmap=cmap,
+                    norm=norm
+                )
+                
+                
+                # Titles personalized with actual event names
+                title_event_1 = f"Δ {event_1_name}"
+                title_event_2 = f"Δ {event_2_name}"
+                title_compound = "Δ Dependence"
+                
+                titles = [title_event_1, title_event_2, title_compound]
+                
+                # Set titles for every row
+                ax.set_title(titles[col_idx], fontsize=10)
+                
+                # Add subplot label
+                ax.text(0.02, 1.1, subplot_labels[row_idx * 3 + col_idx], transform=ax.transAxes, fontsize=9, va='top', ha='left')
+                
+            # Add row labels for the compound event names
+            axs[row_idx, 0].text(-0.2, 0.5, compound_event_name, transform=axs[row_idx, 0].transAxes, fontsize=10,
+                                 va='center', ha='right', rotation=90, color='black')
+        
+        fig.subplots_adjust(wspace=0.1, hspace=-0.5)
+        cbar_ax = fig.add_axes([0.39, 0.2, 0.25, 0.02])
+        cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='both')
+        # Set the ticks explicitly
+        cbar.set_ticks(boundaries)
+        cbar.set_ticklabels([str(b) for b in boundaries])
+        cbar.ax.tick_params(labelsize=9)
+        cbar.set_label(label='Probability Ratio', size=9)
+        
+        fig.suptitle(f'Probability Ratios considering occurrence in {scenario_name} and Early-industrial scenarios', fontsize=12)
+        plt.savefig(f'C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/probability_ratios_second_selection_{scenario_name}_wrt_EI.pdf', dpi=300)
+        
+        plt.show()
+     
+    return data
 
 
 #%% PR with hatches
@@ -5650,7 +5795,7 @@ def plot_probability_ratios_with_hatches(
 
 
 
-def plot_probability_ratios_second_selection(
+def plot_probability_ratios_second_selection_with_hatches(
     average_pr_for_event_1, 
     average_pr_for_event_2, 
     average_pr_for_compound_events, 
@@ -6110,7 +6255,7 @@ def comparison_boxplot(all_compound_event_combinations_and_gcms_timeseries_50_ye
         ax.tick_params(bottom=True, labelbottom = False) # remove the x-axis labels
         
     for ax in axes.flat:
-        ax.set(ylabel = 'Percentage of area')
+        ax.set(ylabel = 'Land area affected by hazards/impacts pair [%]')
         ax.label_outer() # avoid repetition of y axis label on all sub plots
     
     
@@ -6240,7 +6385,7 @@ def comparison_boxplot_with_median_values_per_boxplot(all_compound_event_combina
         ax.tick_params(bottom=True, labelbottom=False)  # remove the x-axis labels
         
     for ax in axes.flat:
-        ax.set(ylabel='Percentage of area')
+        ax.set(ylabel='Land area affected by hazards/impacts pair [%]')
         ax.label_outer()  # avoid repetition of y axis label on all sub plots
     
     legend_elements = [
