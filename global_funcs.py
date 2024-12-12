@@ -44,7 +44,6 @@ cwd = os.getcwd()
 # Entire globe
 map_extent = [-180, 180, -60, 90] # (longitude min, longitude max, latitude min, latitude max)
 
-
 #%% Function to extract starting year from file name to use in the next function for the start period of the data
 def read_start_year(file):
     """ Read the starting year of the data from the file name
@@ -1487,186 +1486,484 @@ def plot_propensity_considering_all_gcms_and_showing_all_extremes(summary_of_pro
 
 
 
+#%%#%% Plot Propensity of Extreme Events
+def plot_propensity_of_extreme_events(propensity_data, extreme_event_categories):
+    """
+    Plot the propensity of extreme events for both main and supplementary scenarios.
+
+    Parameters:
+    - propensity_data: Nested list of propensity data [extreme_event][scenario].
+    - extreme_event_categories: List of extreme event names in the correct order.
+    """
+    # Map extreme event category names
+    event_names = {
+        'floodedarea': 'River Floods',
+        'driedarea': 'Droughts',
+        'heatwavedarea': 'Heatwaves',
+        'cropfailedarea': 'Crop Failures',
+        'burntarea': 'Wildfires',
+        'tropicalcyclonedarea': 'Tropical Cyclones'
+    }
+    list_of_event_names = [event_names[event] for event in extreme_event_categories]
+
+    # Main and supplementary scenarios
+    scenarios_main = ['Present day', 'RCP6.0', 'Difference']
+    scenarios_supplementary = ['Early-industrial', 'RCP2.6', 'RCP8.5']
+
+    # Calculate the difference between Present Day and RCP6.0
+    difference = [
+        calculate_difference(
+            propensity_data[event_index][1],  # Present Day
+            propensity_data[event_index][3]  # RCP6.0
+        )
+        for event_index in range(len(extreme_event_categories))
+    ]
+
+    # Prepare data for main and supplementary plots
+    main_scenarios_data = [
+        [propensity_data[event_index][1] for event_index in range(len(extreme_event_categories))],  # Present Day
+        [propensity_data[event_index][3] for event_index in range(len(extreme_event_categories))],  # RCP6.0
+        difference  # Difference
+    ]
+    supplementary_scenarios_data = [
+        [propensity_data[event_index][0] for event_index in range(len(extreme_event_categories))],  # Early-industrial
+        [propensity_data[event_index][2] for event_index in range(len(extreme_event_categories))],  # RCP2.6
+        [propensity_data[event_index][4] if extreme_event_categories[event_index] != 'cropfailedarea' else None
+         for event_index in range(len(extreme_event_categories))]  # RCP8.5 with missing Crop Failures
+    ]
+
+    # Plot settings
+    cmap_main = plt.cm.get_cmap('bwr')
+    norm_main = mpl.colors.Normalize(vmin=0, vmax=2)
+    cmap_diff = plt.cm.get_cmap('PRGn')
+    norm_diff = mpl.colors.TwoSlopeNorm(vmin=-2, vcenter=0, vmax=2)
+
+    def plot_main_scenarios(fig, axs, scenarios, data, cmap, norm):
+        """Helper function to plot main scenarios."""
+        subplot_labels = 'abcdefghijklmnopqrstuvwx'
+        for col, scenario in enumerate(scenarios):
+            for row, event_name in enumerate(list_of_event_names):
+                index = row * len(scenarios) + col
+                ax = axs[index]
+                ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+                ax.coastlines(color='dimgrey', linewidth=0.7)
+                ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+                ax.spines['geo'].set_visible(False)  # Remove border
+                if data[col][row] is not None:
+                    ax.imshow(
+                        data[col][row],
+                        origin='lower',
+                        extent=[-180, 180, 90, -60],
+                        cmap=cmap if col != 2 else cmap_diff,
+                        norm=norm if col != 2 else norm_diff
+                    )
+                else:
+                    ax.axis('off')  # Hide subplot if no data
+                # Add subplot labels and titles
+                ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
+                if row == 0:
+                    ax.set_title(scenario, fontsize=10)
+                if col == 0:
+                    ax.text(-0.2, 0.5, event_name, transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
+
+        # Adjust layout and add colorbars
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        cbar_ax = fig.add_axes([0.3, 0.05, 0.2, 0.015])
+        cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='max')
+        cbar.ax.tick_params(labelsize=9)
+        cbar.set_label(label='Propensity', size=9)
+        cbar_ax_diff = fig.add_axes([0.58, 0.05, 0.2, 0.015])
+        cbar_diff = fig.colorbar(mpl.cm.ScalarMappable(norm=norm_diff, cmap=cmap_diff), cax=cbar_ax_diff, orientation='horizontal', extend='both')
+        cbar_diff.ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{x:.1f}'))
+        cbar_diff.ax.tick_params(labelsize=9)
+        cbar_diff.set_label(label='Difference in Propensity', size=9)
+
+    def plot_supplementary_scenarios(fig, axs, scenarios, data, cmap, norm):
+        """Helper function to plot supplementary scenarios."""
+        subplot_labels = 'abcdefghijklmnopqrstuvwx'
+        for col, scenario in enumerate(scenarios):
+            for row, event_name in enumerate(list_of_event_names):
+                index = row * len(scenarios) + col
+                ax = axs[index]
+                ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+                ax.coastlines(color='dimgrey', linewidth=0.7)
+                ax.spines['geo'].set_visible(False)  # Remove border
+                if row == 6 and col == 2:
+                # Apply hatching for RCP8.5 scenario for CF
+                    ax.add_feature(cfeature.LAND, facecolor='none', edgecolor='lightgrey', hatch='///')
+                    print("No Crop Failures Data for RCP8.5")   
+                else:
+                    if data[col][row] is not None:
+                        ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+                        ax.imshow(
+                            data[col][row],
+                            origin='lower',
+                            extent=[-180, 180, 90, -60],
+                            cmap=cmap,
+                            norm=norm
+                        )
+                    else: 
+                        ax.add_feature(cfeature.LAND, facecolor='none', edgecolor='lightgrey', hatch='///')
+               
+                ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
+                if row == 0:
+                    ax.set_title(scenario, fontsize=10)
+                if col == 0:
+                    ax.text(-0.2, 0.5, event_name, transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
+
+        # Adjust layout and add a single colorbar
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        cbar_ax = fig.add_axes([0.4, 0.05, 0.25, 0.015])
+        cbar = fig.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='max')
+        cbar.ax.tick_params(labelsize=9)
+        cbar.set_label(label='Propensity', size=9)
+
+    # Plot main scenarios
+    fig_main, axs_main = plt.subplots(6, 3, figsize=(12, 10), subplot_kw={'projection': ccrs.PlateCarree()})
+    axs_main = axs_main.flatten()
+    plot_main_scenarios(fig_main, axs_main, scenarios_main, main_scenarios_data, cmap_main, norm_main)
+    fig_main.suptitle('Propensity of extreme events - Main Scenarios', fontsize=12)
+    fig_main.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Propensity_of_extremes_main_scenarios.pdf', dpi=300)
+    plt.show()
+    plt.close(fig_main)
+
+    # Plot supplementary scenarios
+    fig_supp, axs_supp = plt.subplots(6, 3, figsize=(12, 10), subplot_kw={'projection': ccrs.PlateCarree()})
+    axs_supp = axs_supp.flatten()
+    plot_supplementary_scenarios(fig_supp, axs_supp, scenarios_supplementary, supplementary_scenarios_data, cmap_main, norm_main)
+    fig_supp.suptitle('Propensity of extreme events - Supplementary Scenarios', fontsize=12)
+    fig_supp.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Propensity_of_extremes_supplementary_scenarios.pdf', dpi=300)
+    plt.show()
+    plt.close(fig_supp)
+
+
+
 
 #%% Function for plotting the length of spell of an extreme event
+# =============================================================================
+# def calculate_difference_length_of_spell_individual_extremes(present, rcp60):
+#     difference = [
+#         np.where(np.isnan(present[i]) & ~np.isnan(rcp60[i]), rcp60[i], rcp60[i] - present[i])
+#         if present[i] is not None and rcp60[i] is not None
+#         else None
+#         for i in range(len(present))
+#     ]
+#     return difference
+# 
+# def plot_quantile_95th_of_length_of_spell_with_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_extreme_events, list_of_extreme_events):
+#         
+# 
+#     list_of_extreme_event_names = []
+#     for extreme_event in list_of_extreme_events:
+#         
+#         if extreme_event == 'floodedarea':
+#             event_name = 'River Floods'
+#         if extreme_event == 'driedarea':
+#             event_name = 'Droughts'
+#         if extreme_event == 'heatwavedarea':
+#             event_name = 'Heatwaves'
+#         if extreme_event == 'cropfailedarea':
+#             event_name = 'Crop Failures'
+#         if extreme_event =='burntarea':
+#             event_name = 'Wildfires'
+#         if extreme_event == 'tropicalcyclonedarea':
+#             event_name ='Tropical Cyclones'
+#         list_of_extreme_event_names.append(event_name)
+# 
+#    
+#     # Scenarios:
+#     #scenarios = ['Early-industrial', 'Present day', 'RCP2.6', 'RCP6.0', 'RCP8.5']
+#     
+#     # Scenarios for the main figure:
+#     scenarios_main = ['Present day', 'RCP6.0', 'Difference']
+#     # Scenarios for the supplementary figure:
+#     scenarios_supplementary = ['Early-industrial', 'RCP2.6', 'RCP8.5']
+#     
+#     # Calculate the difference between Present day and RCP6.0
+#     difference = calculate_difference_length_of_spell_individual_extremes(
+#         average_length_of_spells_for_all_extreme_events[1], 
+#         average_length_of_spells_for_all_extreme_events[3]
+#     )
+#     
+#     # Data for the main scenarios
+#     main_scenarios_data = [
+#         average_length_of_spells_for_all_extreme_events[1],  # Present day
+#         average_length_of_spells_for_all_extreme_events[3],  # RCP6.0
+#         difference  # Difference
+#     ]
+#     
+#     # Data for the supplementary scenarios
+#     supplementary_scenarios_data = [
+#         average_length_of_spells_for_all_extreme_events[0],  # Early-industrial
+#         average_length_of_spells_for_all_extreme_events[2],  # RCP2.6
+#         average_length_of_spells_for_all_extreme_events[4]   # RCP8.5
+#     ]
+#     
+#     # Subplot labels
+#     subplot_labels = [
+#         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+#         'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'
+#     ]
+# 
+#     # Plot the main figure for main scenarios
+#     fig_main, axs_main = plt.subplots(6, 3, figsize=(12, 10), subplot_kw={'projection': ccrs.PlateCarree()})
+#     
+#     # Flatten the 2D array of axes into 1D
+#     axs_main = axs_main.flatten()
+#     
+#     # Setting up the discrete color bar scheme
+#     cmap = plt.cm.get_cmap('YlOrRd')
+#     norm = mpl.colors.BoundaryNorm([1, 5, 10, 15, 20, 25, 30], cmap.N, extend='both')
+#     
+#     # Diverging color map for the difference plot
+#     cmap_diff = plt.cm.get_cmap('bwr')
+#     norm_diff = mpl.colors.TwoSlopeNorm(vmin=-10, vcenter=0, vmax=10)
+#     
+#     # Add maps to the main figure
+#     for col in range(3):
+#         for row in range(6):
+#             index = row * 3 + col
+#             ax = axs_main[index]
+#             ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+#             ax.coastlines(color='dimgrey', linewidth=0.7)
+#             ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+#             ax.spines['geo'].set_visible(False)  # Remove border
+# 
+#             if col == 2:  # For the difference column
+#                 plot = ax.imshow(
+#                     main_scenarios_data[col][row], 
+#                     origin='lower', 
+#                     extent=[-180, 180, 90, -60], 
+#                     cmap=cmap_diff, 
+#                     norm=norm_diff
+#                 )
+#             else:
+#                 plot = ax.imshow(
+#                     main_scenarios_data[col][row], 
+#                     origin='lower', 
+#                     extent=[-180, 180, 90, -60], 
+#                     cmap=cmap, 
+#                     norm=norm
+#                 )
+# 
+#             # Add subplot labels
+#             ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
+#             
+#             # Add row and column labels
+#             if row == 0:
+#                 ax.set_title(scenarios_main[col], fontsize=10)
+#             if col == 0:
+#                 ax.text(-0.2, 0.5, list_of_extreme_event_names[row], transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
+#     
+#     fig_main.subplots_adjust(wspace=0.1, hspace=0.1)
+#     cbar_ax_main = fig_main.add_axes([0.25, 0.05, 0.25, 0.015])
+#     cbar_main = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_main, orientation='horizontal', extend='max')
+#     cbar_main.ax.tick_params(labelsize=9)
+#     cbar_main.set_label(label='Years', size=9)
+# 
+#     # Add a colorbar specifically for the difference plot
+#     cbar_ax_diff = fig_main.add_axes([0.60, 0.05, 0.25, 0.015])
+#     cbar_diff = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm_diff, cmap=cmap_diff), cax=cbar_ax_diff, orientation='horizontal', extend='both')
+#     cbar_diff.ax.tick_params(labelsize=9)
+#     cbar_diff.set_label(label='Difference (Years)', size=9)
+#     
+#     # Save and show the main plot
+#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_all_extreme_events_main.pdf', dpi=300)
+#     plt.show()
+#     
+#     # Plot the supplementary figure for supplementary scenarios
+#     fig_supp, axs_supp = plt.subplots(6, 3, figsize=(12, 10), subplot_kw={'projection': ccrs.PlateCarree()})
+#     axs_supp = axs_supp.flatten()
+#     
+#     # Add maps to the supplementary figure
+#     for col in range(3):
+#         for row in range(6):
+#             index = row * 3 + col
+#             ax = axs_supp[index]
+#             ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+#             ax.coastlines(color='dimgrey', linewidth=0.7)
+#             #ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+#             if row == 5 and col == 2:
+#                 # Apply hatching for RCP8.5 scenario for CF
+#                 ax.add_feature(cfeature.LAND, facecolor='none', edgecolor='lightgrey', hatch='///')
+#             else:
+#                 ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+#             ax.spines['geo'].set_visible(False)  # Remove border
+# 
+#             plot = ax.imshow(
+#                 supplementary_scenarios_data[col][row], 
+#                 origin='lower', 
+#                 extent=[-180, 180, 90, -60], 
+#                 cmap=cmap, 
+#                 norm=norm
+#             )
+#             
+#             # Add subplot labels
+#             ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
+#             
+#             # Add row and column labels
+#             if row == 0:
+#                 ax.set_title(scenarios_supplementary[col], fontsize=10)
+#             if col == 0:
+#                 ax.text(-0.2, 0.5, list_of_extreme_event_names[row], transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
+#     
+#     fig_supp.subplots_adjust(wspace=0.1, hspace=0.1)
+#     cbar_ax_supp = fig_supp.add_axes([0.4, 0.05, 0.25, 0.015])
+#     cbar_supp = fig_supp.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_supp, orientation='horizontal', extend='max')
+#     cbar_supp.ax.tick_params(labelsize=9)
+#     cbar_supp.set_label(label='Years', size=9)
+# 
+#     # Save and show the supplementary plot
+#     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_all_extreme_events_supplementary.pdf', dpi=300)
+#     plt.show()
+# 
+#     return main_scenarios_data, supplementary_scenarios_data
+# =============================================================================
+    
+
+#%% Function for calculating differences
 def calculate_difference_length_of_spell_individual_extremes(present, rcp60):
     difference = [
-        np.where(np.isnan(present[i]) & ~np.isnan(rcp60[i]), rcp60[i], rcp60[i] - present[i])
-        if present[i] is not None and rcp60[i] is not None
+        np.where(np.isnan(present[row]) & ~np.isnan(rcp60[row]), rcp60[row], rcp60[row] - present[row])
+        if present[row] is not None and rcp60[row] is not None
         else None
-        for i in range(len(present))
+        for row in range(len(present))
     ]
     return difference
 
-def plot_quantile_95th_of_length_of_spell_with_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_extreme_events, list_of_extreme_events):
-        
+#%% Main Function for Plotting Both Main and Supplementary Figures
+def plot_quantile_95th_of_length_of_spell_with_occurrence_considering_all_gcms_and_showing_all_extremes(quantile_95th_per_event_per_scenario, extreme_event_categories):
+    # Mapping of extreme events to human-readable names
+    extreme_event_name_map = {
+        'floodedarea': 'River Floods',
+        'driedarea': 'Droughts',
+        'heatwavedarea': 'Heatwaves',
+        'cropfailedarea': 'Crop Failures',
+        'burntarea': 'Wildfires',
+        'tropicalcyclonedarea': 'Tropical Cyclones'
+    }
 
-    list_of_extreme_event_names = []
-    for extreme_event in list_of_extreme_events:
-        
-        if extreme_event == 'floodedarea':
-            event_name = 'River Floods'
-        if extreme_event == 'driedarea':
-            event_name = 'Droughts'
-        if extreme_event == 'heatwavedarea':
-            event_name = 'Heatwaves'
-        if extreme_event == 'cropfailedarea':
-            event_name = 'Crop Failures'
-        if extreme_event =='burntarea':
-            event_name = 'Wildfires'
-        if extreme_event == 'tropicalcyclonedarea':
-            event_name ='Tropical Cyclones'
-        list_of_extreme_event_names.append(event_name)
+    list_of_extreme_event_names = [extreme_event_name_map[event] for event in extreme_event_categories]
 
-   
-    # Scenarios:
-    #scenarios = ['Early-industrial', 'Present day', 'RCP2.6', 'RCP6.0', 'RCP8.5']
-    
-    # Scenarios for the main figure:
+    # Scenarios for main and supplementary figures
     scenarios_main = ['Present day', 'RCP6.0', 'Difference']
-    # Scenarios for the supplementary figure:
     scenarios_supplementary = ['Early-industrial', 'RCP2.6', 'RCP8.5']
-    
-    # Calculate the difference between Present day and RCP6.0
-    difference = calculate_difference_length_of_spell_individual_extremes(
-        average_length_of_spells_for_all_extreme_events[1], 
-        average_length_of_spells_for_all_extreme_events[3]
-    )
-    
-    # Data for the main scenarios
-    main_scenarios_data = [
-        average_length_of_spells_for_all_extreme_events[1],  # Present day
-        average_length_of_spells_for_all_extreme_events[3],  # RCP6.0
-        difference  # Difference
-    ]
-    
-    # Data for the supplementary scenarios
-    supplementary_scenarios_data = [
-        average_length_of_spells_for_all_extreme_events[0],  # Early-industrial
-        average_length_of_spells_for_all_extreme_events[2],  # RCP2.6
-        average_length_of_spells_for_all_extreme_events[4]   # RCP8.5
-    ]
-    
-    # Subplot labels
-    subplot_labels = [
-        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-        'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'
-    ]
 
-    # Plot the main figure for main scenarios
+    # Prepare data for the main figure
+    present_day_data = [quantile_95th_per_event_per_scenario[event][1] for event in range(len(extreme_event_categories))]
+    rcp60_data = [quantile_95th_per_event_per_scenario[event][3] for event in range(len(extreme_event_categories))]
+    difference_data = calculate_difference_length_of_spell_individual_extremes(present_day_data, rcp60_data)
+
+    main_scenarios_data = [present_day_data, rcp60_data, difference_data]
+
+    # Prepare data for the supplementary figure
+    early_industrial_data = [quantile_95th_per_event_per_scenario[event][0] for event in range(len(extreme_event_categories))]
+    rcp26_data = [quantile_95th_per_event_per_scenario[event][2] for event in range(len(extreme_event_categories))]
+    rcp85_data = [quantile_95th_per_event_per_scenario[event][4] for event in range(len(extreme_event_categories))]
+
+    supplementary_scenarios_data = [early_industrial_data, rcp26_data, rcp85_data]
+
+    #%% Plot Main Figure
     fig_main, axs_main = plt.subplots(6, 3, figsize=(12, 10), subplot_kw={'projection': ccrs.PlateCarree()})
-    
-    # Flatten the 2D array of axes into 1D
     axs_main = axs_main.flatten()
-    
-    # Setting up the discrete color bar scheme
-    cmap = plt.cm.get_cmap('YlOrRd')
+    subplot_labels = list('abcdefghijklmnopqrstuvwxyz')
+
+    cmap = plt.cm.YlOrRd
     norm = mpl.colors.BoundaryNorm([1, 5, 10, 15, 20, 25, 30], cmap.N, extend='both')
-    
-    # Diverging color map for the difference plot
-    cmap_diff = plt.cm.get_cmap('bwr')
+    cmap_diff = plt.cm.bwr
     norm_diff = mpl.colors.TwoSlopeNorm(vmin=-10, vcenter=0, vmax=10)
-    
-    # Add maps to the main figure
-    for col in range(3):
-        for row in range(6):
-            index = row * 3 + col
+
+    for col, scenario in enumerate(scenarios_main):
+        for row, event_name in enumerate(list_of_extreme_event_names):
+            index = row * len(scenarios_main) + col
             ax = axs_main[index]
             ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
             ax.coastlines(color='dimgrey', linewidth=0.7)
             ax.add_feature(cfeature.LAND, facecolor='lightgrey')
-            ax.spines['geo'].set_visible(False)  # Remove border
+            ax.spines['geo'].set_visible(False)
 
-            if col == 2:  # For the difference column
+            if col == 2:  # Difference column
                 plot = ax.imshow(
-                    main_scenarios_data[col][row], 
-                    origin='lower', 
-                    extent=[-180, 180, 90, -60], 
-                    cmap=cmap_diff, 
+                    main_scenarios_data[col][row],
+                    origin='lower',
+                    extent=[-180, 180, 90, -60],
+                    cmap=cmap_diff,
                     norm=norm_diff
                 )
             else:
                 plot = ax.imshow(
-                    main_scenarios_data[col][row], 
-                    origin='lower', 
-                    extent=[-180, 180, 90, -60], 
-                    cmap=cmap, 
+                    main_scenarios_data[col][row],
+                    origin='lower',
+                    extent=[-180, 180, 90, -60],
+                    cmap=cmap,
                     norm=norm
                 )
 
-            # Add subplot labels
             ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
-            
-            # Add row and column labels
-            if row == 0:
-                ax.set_title(scenarios_main[col], fontsize=10)
-            if col == 0:
-                ax.text(-0.2, 0.5, list_of_extreme_event_names[row], transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
-    
-    fig_main.subplots_adjust(wspace=0.1, hspace=0.1)
-    cbar_ax_main = fig_main.add_axes([0.25, 0.05, 0.25, 0.015])
-    cbar_main = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_main, orientation='horizontal', extend='max')
-    cbar_main.ax.tick_params(labelsize=9)
-    cbar_main.set_label(label='Years', size=9)
 
-    # Add a colorbar specifically for the difference plot
+            if row == 0:
+                ax.set_title(scenario, fontsize=10)
+            if col == 0:
+                ax.text(-0.2, 0.5, event_name, transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
+
+    fig_main.subplots_adjust(wspace=0.1, hspace=0.1)
+    cbar_ax = fig_main.add_axes([0.25, 0.05, 0.25, 0.015])
+    cbar_main = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax, orientation='horizontal', extend='max')
+    cbar_main.set_label(label='Years', size=9)
+    cbar_main.ax.tick_params(labelsize=9)
     cbar_ax_diff = fig_main.add_axes([0.60, 0.05, 0.25, 0.015])
-    cbar_diff = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm_diff, cmap=cmap_diff), cax=cbar_ax_diff, orientation='horizontal', extend='both')
-    cbar_diff.ax.tick_params(labelsize=9)
+    cbar_diff= fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm_diff, cmap=cmap_diff), cax=cbar_ax_diff, orientation='horizontal', extend='both')
     cbar_diff.set_label(label='Difference (Years)', size=9)
-    
-    # Save and show the main plot
+    cbar_diff.ax.tick_params(labelsize=9)
+
     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_all_extreme_events_main.pdf', dpi=300)
     plt.show()
-    
-    # Plot the supplementary figure for supplementary scenarios
+
+    #%% Plot Supplementary Figure
     fig_supp, axs_supp = plt.subplots(6, 3, figsize=(12, 10), subplot_kw={'projection': ccrs.PlateCarree()})
     axs_supp = axs_supp.flatten()
-    
-    # Add maps to the supplementary figure
-    for col in range(3):
-        for row in range(6):
-            index = row * 3 + col
+
+    for col, scenario in enumerate(scenarios_supplementary):
+        for row, event_name in enumerate(list_of_extreme_event_names):
+            index = row * len(scenarios_supplementary) + col
             ax = axs_supp[index]
             ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
             ax.coastlines(color='dimgrey', linewidth=0.7)
-            #ax.add_feature(cfeature.LAND, facecolor='lightgrey')
+            ax.spines['geo'].set_visible(False)
             if row == 5 and col == 2:
-                # Apply hatching for RCP8.5 scenario for CF
+            # Apply hatching for RCP8.5 scenario for CF
                 ax.add_feature(cfeature.LAND, facecolor='none', edgecolor='lightgrey', hatch='///')
             else:
                 ax.add_feature(cfeature.LAND, facecolor='lightgrey')
-            ax.spines['geo'].set_visible(False)  # Remove border
+            
 
-            plot = ax.imshow(
-                supplementary_scenarios_data[col][row], 
-                origin='lower', 
-                extent=[-180, 180, 90, -60], 
-                cmap=cmap, 
-                norm=norm
-            )
-            
-            # Add subplot labels
+                plot = ax.imshow(
+                    supplementary_scenarios_data[col][row],
+                    origin='lower',
+                    extent=[-180, 180, 90, -60],
+                    cmap=cmap,
+                    norm=norm
+                )
+
             ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
-            
-            # Add row and column labels
+
             if row == 0:
-                ax.set_title(scenarios_supplementary[col], fontsize=10)
+                ax.set_title(scenario, fontsize=10)
             if col == 0:
-                ax.text(-0.2, 0.5, list_of_extreme_event_names[row], transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
-    
+                ax.text(-0.2, 0.5, event_name, transform=ax.transAxes, fontsize=10, ha='center', va='center', rotation=90)
+
     fig_supp.subplots_adjust(wspace=0.1, hspace=0.1)
     cbar_ax_supp = fig_supp.add_axes([0.4, 0.05, 0.25, 0.015])
     cbar_supp = fig_supp.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_supp, orientation='horizontal', extend='max')
     cbar_supp.ax.tick_params(labelsize=9)
     cbar_supp.set_label(label='Years', size=9)
 
-    # Save and show the supplementary plot
     plt.savefig('C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_all_extreme_events_supplementary.pdf', dpi=300)
     plt.show()
 
-    return main_scenarios_data, supplementary_scenarios_data
-    
+
+
+
 
 #%% Function for plotting the length of spell of compound evennts
 def plot_quantile_95th_of_length_of_spell_with_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_compound_extreme_events, compound_events_names):
@@ -2031,6 +2328,357 @@ def plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrenc
     plt.show()
 
     return main_scenarios_data, supplementary_scenarios_data
+
+
+#%%
+def plot_quantile_95th_length_of_spell_for_event_pairs(
+    quantile_95th_per_event_pair_per_scenario,
+    compound_events_names,
+    selected_indices,
+):
+    """
+    Plot maps showing the 95th quantile of the length of spell for compound events for selected scenarios.
+
+    Parameters
+    ----------
+    quantile_95th_per_event_pair_per_scenario : List[List[Xarray DataArray]]
+        The 95th quantile for the length of spell of all compound event pairs for 5 scenarios.
+    compound_events_names : List of Strings
+        Names of the compound event pairs.
+    selected_indices : List of Integers
+        Indices of the compound event pairs to plot.
+
+    Returns
+    -------
+    None
+    """
+    # Mapping event names to acronyms
+    event_acronyms = {
+        "floodedarea": "RF",
+        "driedarea": "DR",
+        "heatwavedarea": "HW",
+        "cropfailedarea": "CF",
+        "burntarea": "WF",
+        "tropicalcyclonedarea": "TC",
+    }
+
+    # Generate acronyms for the compound events
+    selected_compound_events_names = [
+        f"{event_acronyms.get(compound_events_names[i][0], compound_events_names[i][0])} & "
+        f"{event_acronyms.get(compound_events_names[i][1], compound_events_names[i][1])}"
+        for i in selected_indices
+    ]
+
+    # Scenarios for the main and supplementary plots
+    scenarios_main = ["Present day", "RCP6.0", "Difference"]
+    scenarios_supplementary = ["Early-industrial", "RCP2.6", "RCP8.5"]
+
+    # Data preparation
+    main_scenarios_data = [
+        [quantile_95th_per_event_pair_per_scenario[idx][1] for idx in selected_indices],  # Present day
+        [quantile_95th_per_event_pair_per_scenario[idx][3] for idx in selected_indices],  # RCP6.0
+        [
+# =============================================================================
+#             quantile_95th_per_event_pair_per_scenario[idx][3]
+#             - quantile_95th_per_event_pair_per_scenario[idx][1]
+#             for idx in selected_indices
+# =============================================================================
+            np.where(
+            np.isnan(quantile_95th_per_event_pair_per_scenario[idx][1]) &
+            ~np.isnan(quantile_95th_per_event_pair_per_scenario[idx][3]),
+            quantile_95th_per_event_pair_per_scenario[idx][3],
+            quantile_95th_per_event_pair_per_scenario[idx][3]
+            - quantile_95th_per_event_pair_per_scenario[idx][1],
+        )
+        if quantile_95th_per_event_pair_per_scenario[idx][1] is not None
+        and quantile_95th_per_event_pair_per_scenario[idx][3] is not None
+        else None
+        for idx in selected_indices
+        ],  # Difference
+    ]
+
+    supplementary_scenarios_data = [
+        [quantile_95th_per_event_pair_per_scenario[idx][0] for idx in selected_indices],  # Early-industrial
+        [quantile_95th_per_event_pair_per_scenario[idx][2] for idx in selected_indices],  # RCP2.6
+        [quantile_95th_per_event_pair_per_scenario[idx][4] for idx in selected_indices],  # RCP8.5
+    ]
+
+    # Plotting configuration
+    cmap = plt.cm.get_cmap("YlOrRd")
+    norm = mpl.colors.BoundaryNorm([1, 5, 10, 15, 20, 25, 30], cmap.N, extend="both")
+    cmap_diff = plt.cm.get_cmap("bwr")
+    norm_diff = mpl.colors.TwoSlopeNorm(vmin=-10, vcenter=0, vmax=10)
+
+    # Helper function to add maps to the figure
+    def add_maps(axs, data, scenarios, cmap, norm, is_difference=False):
+        subplot_labels = "abcdefghijklmnopqrstuvwxyz"
+        for row, idx in enumerate(selected_indices):
+            for col, scenario in enumerate(scenarios):
+                ax = axs[row * len(scenarios) + col]
+                ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+                ax.coastlines(color="dimgrey", linewidth=0.7)
+                if data[col][row] is None:
+                    # Apply hatching for RCP8.5 scenario for CF
+                    ax.add_feature(cfeature.LAND, facecolor='none', edgecolor='lightgrey', hatch='///')
+                    ax.spines["geo"].set_visible(False)
+                else:
+                    ax.add_feature(cfeature.LAND, facecolor="lightgrey")
+                    ax.spines["geo"].set_visible(False)
+    
+                    # Use a diverging colormap for the difference
+                    if is_difference and col == 2:
+                        plot = ax.imshow(
+                            data[col][row],
+                            origin="lower",
+                            extent=[-180, 180, 90, -60],
+                            cmap=cmap_diff,
+                            norm=norm_diff,
+                        )
+                    else:
+                        plot = ax.imshow(
+                            data[col][row],
+                            origin="lower",
+                            extent=[-180, 180, 90, -60],
+                            cmap=cmap,
+                            norm=norm,
+                        )
+
+                if row == 0:
+                    ax.set_title(scenario, fontsize=10)
+                if col == 0:
+                    ax.text(
+                        -0.2,
+                        0.5,
+                        selected_compound_events_names[row],
+                        transform=ax.transAxes,
+                        fontsize=10,
+                        ha="center",
+                        va="center",
+                        rotation=90,
+                    )
+                # Add subplot label
+                ax.text(
+                    0.02,
+                    1.05,
+                    subplot_labels[row * len(scenarios) + col],
+                    transform=ax.transAxes,
+                    fontsize=9,
+                    va="top",
+                    ha="left",
+                )
+
+    # Main scenarios plot
+    fig_main, axs_main = plt.subplots(
+        len(selected_indices), 3, figsize=(10, 8), subplot_kw={"projection": ccrs.PlateCarree()}
+    )
+    axs_main = axs_main.flatten()
+    add_maps(axs_main, main_scenarios_data, scenarios_main, cmap, norm, is_difference=True)
+    fig_main.subplots_adjust(wspace=0.1, hspace=-0.5)
+    cbar_ax_main = fig_main.add_axes([0.3, 0.18, 0.2, 0.015])
+    cbar_main = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_main, orientation='horizontal', extend='max')
+    cbar_main.ax.tick_params(labelsize=9)
+    cbar_main.set_label(label='Years', size=9)
+    
+    # Color bar for the difference column
+    cbar_ax_diff = fig_main.add_axes([0.6, 0.18, 0.2, 0.015])
+    cbar_diff = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm_diff, cmap=cmap_diff), cax=cbar_ax_diff, orientation='horizontal', extend='both')
+    cbar_diff.ax.tick_params(labelsize=9)
+    cbar_diff.set_label(label='Difference (Years)', size=9)
+    
+    
+    plt.savefig("C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_selected_compound_extremes_under_the_present_day_and_rcp60.pdf", dpi=300)
+    plt.show()
+
+    # Supplementary scenarios plot
+    fig_supp, axs_supp = plt.subplots(
+        len(selected_indices), 3, figsize=(15, 10), subplot_kw={"projection": ccrs.PlateCarree()}
+    )
+    axs_supp = axs_supp.flatten()
+    add_maps(axs_supp, supplementary_scenarios_data, scenarios_supplementary, cmap, norm)
+    fig_supp.subplots_adjust(wspace=0.1, hspace=-0.2)
+    cbar_ax_supp = fig_supp.add_axes([0.4, 0.12, 0.25, 0.018])
+    cbar_supp = fig_supp.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_supp, orientation='horizontal', extend='max')
+    cbar_supp.ax.tick_params(labelsize=9)
+    cbar_supp.set_label(label='Years', size=9)
+    
+    plt.savefig("C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_for_selected_compound_extremes_under_the_early_industrial_rcp26_andrcp85_SUPPLEMENT.pdf", dpi=300)
+    plt.show()
+
+
+#%%
+def plot_quantile_95th_length_of_spell_for_event_pairs_second_plot(
+    quantile_95th_per_event_pair_per_scenario,
+    compound_events_names,
+    selected_indices,
+):
+    """
+    Plot maps showing the 95th quantile of the length of spell for compound events for selected scenarios.
+
+    Parameters
+    ----------
+    quantile_95th_per_event_pair_per_scenario : List[List[Xarray DataArray]]
+        The 95th quantile for the length of spell of all compound event pairs for 5 scenarios.
+    compound_events_names : List of Strings
+        Names of the compound event pairs.
+    selected_indices : List of Integers
+        Indices of the compound event pairs to plot.
+
+    Returns
+    -------
+    None
+    """
+    # Mapping event names to acronyms
+    event_acronyms = {
+        "floodedarea": "RF",
+        "driedarea": "DR",
+        "heatwavedarea": "HW",
+        "cropfailedarea": "CF",
+        "burntarea": "WF",
+        "tropicalcyclonedarea": "TC",
+    }
+
+    # Generate acronyms for the compound events
+    selected_compound_events_names = [
+        f"{event_acronyms.get(compound_events_names[i][0], compound_events_names[i][0])} & "
+        f"{event_acronyms.get(compound_events_names[i][1], compound_events_names[i][1])}"
+        for i in selected_indices
+    ]
+
+    # Scenarios for the main and supplementary plots
+    scenarios_main = ["Present day", "RCP6.0", "Difference"]
+    scenarios_supplementary = ["Early-industrial", "RCP2.6", "RCP8.5"]
+
+    # Data preparation
+    main_scenarios_data = [
+        [quantile_95th_per_event_pair_per_scenario[idx][1] for idx in selected_indices],  # Present day
+        [quantile_95th_per_event_pair_per_scenario[idx][3] for idx in selected_indices],  # RCP6.0
+        [
+# =============================================================================
+#             quantile_95th_per_event_pair_per_scenario[idx][3]
+#             - quantile_95th_per_event_pair_per_scenario[idx][1]
+#             for idx in selected_indices
+# =============================================================================
+            np.where(
+            np.isnan(quantile_95th_per_event_pair_per_scenario[idx][1]) &
+            ~np.isnan(quantile_95th_per_event_pair_per_scenario[idx][3]),
+            quantile_95th_per_event_pair_per_scenario[idx][3],
+            quantile_95th_per_event_pair_per_scenario[idx][3]
+            - quantile_95th_per_event_pair_per_scenario[idx][1],
+        )
+        if quantile_95th_per_event_pair_per_scenario[idx][1] is not None
+        and quantile_95th_per_event_pair_per_scenario[idx][3] is not None
+        else None
+        for idx in selected_indices
+        ],  # Difference
+    ]
+
+    supplementary_scenarios_data = [
+        [quantile_95th_per_event_pair_per_scenario[idx][0] for idx in selected_indices],  # Early-industrial
+        [quantile_95th_per_event_pair_per_scenario[idx][2] for idx in selected_indices],  # RCP2.6
+        [quantile_95th_per_event_pair_per_scenario[idx][4] for idx in selected_indices],  # RCP8.5
+    ]
+
+    # Plotting configuration
+    cmap = plt.cm.get_cmap("YlOrRd")
+    norm = mpl.colors.BoundaryNorm([1, 5, 10, 15, 20, 25, 30], cmap.N, extend="both")
+    cmap_diff = plt.cm.get_cmap("bwr")
+    norm_diff = mpl.colors.TwoSlopeNorm(vmin=-10, vcenter=0, vmax=10)
+
+    # Helper function to add maps to the figure
+    def add_maps(axs, data, scenarios, cmap, norm, is_difference=False):
+        subplot_labels = "abcdefghijklmnopqrstuvwxyz"
+        for row, idx in enumerate(selected_indices):
+            for col, scenario in enumerate(scenarios):
+                ax = axs[row * len(scenarios) + col]
+                ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+                ax.coastlines(color="dimgrey", linewidth=0.7)
+                if data[col][row] is None:
+                    # Apply hatching for RCP8.5 scenario for CF
+                    ax.add_feature(cfeature.LAND, facecolor='none', edgecolor='lightgrey', hatch='///')
+                    ax.spines["geo"].set_visible(False)
+                else:
+                    ax.add_feature(cfeature.LAND, facecolor="lightgrey")
+                    ax.spines["geo"].set_visible(False)
+    
+                    # Use a diverging colormap for the difference
+                    if is_difference and col == 2:
+                        plot = ax.imshow(
+                            data[col][row],
+                            origin="lower",
+                            extent=[-180, 180, 90, -60],
+                            cmap=cmap_diff,
+                            norm=norm_diff,
+                        )
+                    else:
+                        plot = ax.imshow(
+                            data[col][row],
+                            origin="lower",
+                            extent=[-180, 180, 90, -60],
+                            cmap=cmap,
+                            norm=norm,
+                        )
+
+                if row == 0:
+                    ax.set_title(scenario, fontsize=10)
+                if col == 0:
+                    ax.text(
+                        -0.2,
+                        0.5,
+                        selected_compound_events_names[row],
+                        transform=ax.transAxes,
+                        fontsize=10,
+                        ha="center",
+                        va="center",
+                        rotation=90,
+                    )
+                # Add subplot label
+                ax.text(
+                    0.02,
+                    1.05,
+                    subplot_labels[row * len(scenarios) + col],
+                    transform=ax.transAxes,
+                    fontsize=9,
+                    va="top",
+                    ha="left",
+                )
+
+    # Main scenarios plot
+    fig_main, axs_main = plt.subplots(
+        len(selected_indices), 3, figsize=(10, 8), subplot_kw={"projection": ccrs.PlateCarree()}
+    )
+    axs_main = axs_main.flatten()
+    add_maps(axs_main, main_scenarios_data, scenarios_main, cmap, norm, is_difference=True)
+    fig_main.subplots_adjust(wspace=0.1, hspace=-0.65)
+    cbar_ax_main = fig_main.add_axes([0.3, 0.25, 0.2, 0.015])
+    cbar_main = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_main, orientation='horizontal', extend='max')
+    cbar_main.ax.tick_params(labelsize=9)
+    cbar_main.set_label(label='Years', size=9)
+    
+    # Color bar for the difference column
+    cbar_ax_diff = fig_main.add_axes([0.6, 0.25, 0.2, 0.015])
+    cbar_diff = fig_main.colorbar(mpl.cm.ScalarMappable(norm=norm_diff, cmap=cmap_diff), cax=cbar_ax_diff, orientation='horizontal', extend='both')
+    cbar_diff.ax.tick_params(labelsize=9)
+    cbar_diff.set_label(label='Difference (Years)', size=9)
+    
+    
+    plt.savefig("C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_under_the_present_day_and_rcp60_select2.pdf", dpi=300)
+    plt.show()
+
+    # Supplementary scenarios plot
+    fig_supp, axs_supp = plt.subplots(
+        len(selected_indices), 3, figsize=(15, 10), subplot_kw={"projection": ccrs.PlateCarree()}
+    )
+    axs_supp = axs_supp.flatten()
+    add_maps(axs_supp, supplementary_scenarios_data, scenarios_supplementary, cmap, norm)
+    fig_supp.subplots_adjust(wspace=0.1, hspace=-0.6)
+    cbar_ax_supp = fig_supp.add_axes([0.4, 0.22, 0.25, 0.018])
+    cbar_supp = fig_supp.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cbar_ax_supp, orientation='horizontal', extend='max')
+    cbar_supp.ax.tick_params(labelsize=9)
+    cbar_supp.set_label(label='Years', size=9)
+    
+    plt.savefig("C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/95th_percentile_of_length_of_spell_under_the_early_industrial_rcp26_andrcp85_SUPPLEMENT_select2.pdf", dpi=300)
+    plt.show()
+
 
 #%%
 def plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes_second_plot(
@@ -2513,7 +3161,7 @@ def plot_cooccurrence_ratio_considering_all_gcms(average_cooccurrence_ratio_cons
 
 
 #%% Function for plotting the co-occurrence ratio in A SINGLE PLOT
-def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_oceans):
+def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(average_cooccurrence_ratios_per_scenario, mask_for_oceans):
     
     """ Plot a map showing the average co-occurrence ratio across cross category impact models driven by the same GCM such that a co-occurrence ratio > 1 means that there are more co-occurring extremes than isolated extremes, and a co-occurence ratio < 1 means that there are less co-occurring extremes than isolated ones.  
     
@@ -2547,15 +3195,15 @@ def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_ave
     scenarios_supplementary = ['Early-industrial', 'RCP2.6']
     
     def calculate_difference(present, rcp60):
-        difference = [rcp60[i] - present[i] if present[i] is not None and rcp60[i] is not None else None for i in range(len(present))]
+        difference = rcp60 - present if present is not None and rcp60 is not None else None
         return difference
     
     # Calculate the difference between Present day and RCP6.0
-    difference = calculate_difference(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[1], summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[3])
+    difference = calculate_difference(average_cooccurrence_ratios_per_scenario[1], average_cooccurrence_ratios_per_scenario[3])
     
-    main_scenarios_data = [summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[1], summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[3], difference]
+    main_scenarios_data = [average_cooccurrence_ratios_per_scenario[1], average_cooccurrence_ratios_per_scenario[3], difference]
     
-    supplementary_scenarios_data = [summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[0], summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[2]]
+    supplementary_scenarios_data = [average_cooccurrence_ratios_per_scenario[0], average_cooccurrence_ratios_per_scenario[2]]
     
     # Setting the projection of the map to cylindrical / Mercator
     fig_main, axs_main = plt.subplots(1, 3, figsize=(15, 5), subplot_kw={'projection': ccrs.PlateCarree()})
@@ -2584,9 +3232,9 @@ def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_ave
                 ax.add_feature(cfeature.LAND, facecolor='lightgrey')
                 ax.spines['geo'].set_visible(False)  # Remove border
                 if col == 2:  # Use coolwarm colormap for the difference column
-                    plot = ax.imshow(data[col][row], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_diff, norm=norm_diff)
+                    plot = ax.imshow(data[col], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_diff, norm=norm_diff)
                 else:  # Use the default colormap for the other columns
-                    plot = ax.imshow(data[col][row], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_main, norm=norm_main)
+                    plot = ax.imshow(data[col], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_main, norm=norm_main)
                 
                     
                 ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
@@ -2627,7 +3275,7 @@ def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_ave
                 ax.coastlines(color='dimgrey', linewidth=0.7)
                 ax.add_feature(cfeature.LAND, facecolor='lightgrey')
                 ax.spines['geo'].set_visible(False)  # Remove border
-                plot = ax.imshow(data[col][row], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_main, norm=norm_main)
+                plot = ax.imshow(data[col], origin='lower', extent=[-180, 180, 90, -60], cmap=cmap_main, norm=norm_main)
 
                   
                 ax.text(0.02, 0.95, subplot_labels[index], transform=ax.transAxes, fontsize=9, ha='left')
@@ -2652,7 +3300,133 @@ def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_ave
     
 
         
-    return summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios
+    return average_cooccurrence_ratios_per_scenario
+
+
+# =============================================================================
+# 
+# def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(
+#     average_cooccurrence_ratios_per_scenario, mask_for_oceans
+# ):
+#     """
+#     Plot a map showing the average co-occurrence ratio across cross-category impact models
+#     driven by the same GCM.
+# 
+#     Parameters
+#     ----------
+#     average_cooccurrence_ratios_per_scenario : list of Xarray DataArray
+#         Averages across scenarios for each GCM.
+#     mask_for_oceans : Xarray DataArray
+#         A mask to exclude ocean areas.
+# 
+#     Returns
+#     -------
+#     None
+#     """
+# 
+#     scenarios_main = ["Present day", "RCP6.0", "Difference"]
+#     scenarios_supplementary = ["Early-industrial", "RCP2.6"]
+# 
+#     # Calculate the difference between Present day and RCP6.0
+#     def calculate_difference(present, rcp60):
+#         return rcp60 - present
+# 
+#     # Mask oceans for all scenarios
+#     masked_data = [
+#         scenario.where(mask_for_oceans, np.nan)
+#         for scenario in average_cooccurrence_ratios_per_scenario
+#     ]
+# 
+#     # Compute difference
+#     difference = calculate_difference(masked_data[1], masked_data[3])
+# 
+#     # Prepare main and supplementary data
+#     main_scenarios_data = [masked_data[1], masked_data[3], difference]
+#     supplementary_scenarios_data = [masked_data[0], masked_data[2]]
+# 
+#     # Colorbar settings
+#     cmap_main = plt.cm.get_cmap("bwr")
+#     norm_main = mpl.colors.Normalize(vmin=0, vmax=2)
+# 
+#     cmap_diff = plt.cm.get_cmap("PRGn")
+#     norm_diff = mpl.colors.TwoSlopeNorm(vmin=-2, vcenter=0, vmax=2)
+# 
+#     # Function to add maps to a figure
+#     def add_maps_to_figure(fig, axs, scenarios, cmap, norm, data, is_difference=False):
+#         for idx, ax in enumerate(axs):
+#             ax.set_extent([-180, 180, 90, -60], crs=ccrs.PlateCarree())
+#             ax.coastlines(color="dimgrey", linewidth=0.7)
+#             ax.add_feature(cfeature.LAND, facecolor="lightgrey")
+#             ax.spines["geo"].set_visible(False)  # Remove border
+# 
+#             # Use a different colormap for the difference column
+#             if is_difference and idx == 2:
+#                 plot = data[idx].plot.imshow(
+#                     ax=ax, transform=ccrs.PlateCarree(), cmap=cmap_diff, norm=norm_diff, add_colorbar=False
+#                 )
+#             else:
+#                 plot = data[idx].plot.imshow(
+#                     ax=ax, transform=ccrs.PlateCarree(), cmap=cmap, norm=norm, add_colorbar=False
+#                 )
+# 
+#             ax.set_title(scenarios[idx], fontsize=10)
+# 
+#         return plot
+# 
+#     # Main scenarios plot
+#     fig_main, axs_main = plt.subplots(
+#         1, 3, figsize=(15, 5), subplot_kw={"projection": ccrs.PlateCarree()}
+#     )
+#     plot_main = add_maps_to_figure(
+#         fig_main, axs_main, scenarios_main, cmap_main, norm_main, main_scenarios_data, is_difference=True
+#     )
+# 
+#     fig_main.subplots_adjust(wspace=0.1)
+#     cbar_ax_main = fig_main.add_axes([0.3, 0.2, 0.4, 0.02])
+#     fig_main.colorbar(
+#         mpl.cm.ScalarMappable(norm=norm_main, cmap=cmap_main),
+#         cax=cbar_ax_main,
+#         orientation="horizontal",
+#         label="Co-occurrence ratio",
+#     )
+# 
+#     plt.savefig(
+#         "C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Co_occurrence_ratio_main_scenarios.pdf",
+#         dpi=300,
+#     )
+#     plt.show()
+#     plt.close()
+# 
+#     # Supplementary scenarios plot
+#     fig_supp, axs_supp = plt.subplots(
+#         1, 2, figsize=(10, 5), subplot_kw={"projection": ccrs.PlateCarree()}
+#     )
+#     plot_supp = add_maps_to_figure(
+#         fig_supp, axs_supp, scenarios_supplementary, cmap_main, norm_main, supplementary_scenarios_data
+#     )
+# 
+#     fig_supp.subplots_adjust(wspace=0.1)
+#     cbar_ax_supp = fig_supp.add_axes([0.35, 0.15, 0.3, 0.02])
+#     fig_supp.colorbar(
+#         mpl.cm.ScalarMappable(norm=norm_main, cmap=cmap_main),
+#         cax=cbar_ax_supp,
+#         orientation="horizontal",
+#         label="Co-occurrence ratio",
+#     )
+# 
+#     plt.savefig(
+#         "C:/Users/dmuheki/OneDrive - Vrije Universiteit Brussel/Concurrent_climate_extremes_global/Co_occurrence_ratio_supplementary_scenarios.pdf",
+#         dpi=300,
+#     )
+#     plt.show()
+#     plt.close()
+# 
+# 
+# 
+# =============================================================================
+
+
+
 
 #%%
 def plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot_including_rcp85(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_oceans):

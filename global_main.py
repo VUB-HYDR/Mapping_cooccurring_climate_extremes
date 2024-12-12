@@ -10,6 +10,7 @@ import global_funcs as fn
 import xarray as xr
 import numpy as np
 import itertools
+from itertools import product
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import seaborn as sns
@@ -81,10 +82,7 @@ entire_globe_grid_cell_areas_in_xarray = (xr.open_dataset(entire_globe_grid_cell
 
 occurrence_of_extreme_event_considering_all_gcms_and_impact_models = [[],[],[],[],[],[]] # Where order of list is the six extreme event catergories and within these: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5 and extreme event name] AND within each element the order of the list of data considering the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5']   
 no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models = [[],[],[],[],[],[]] # Where order of list is the six extreme event catergories and within these: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5 and extreme event name] AND within each element the order of the list of data considering the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5']   
-#probability_of_occurrence_of_extreme_event_considering_all_gcms_and_impact_models = [[],[],[],[],[],[]] 
-#length_of_spell_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models = [[],[],[],[],[],[]] 
-#maximum_number_of_years_with_consecutive_occurrence_of_extreme_event_considering_all_gcms_and_impact_models = [[],[],[],[],[],[]] 
-#timeseries_of_fraction_of_area_affected_by_occurrence_of_extreme_event_considering_all_gcms_and_impact_models = [[],[],[],[],[],[]] 
+
 
 for extreme_event in extreme_event_categories:
     
@@ -267,123 +265,141 @@ for extreme_event in extreme_event_categories:
 # frequent than the average or less frequent than the average as having a propensity > 1 or < 1, with propensity = 1 
 # meaning that the chosen event class perfectly matches the average extreme event frequency at that gridpoint.
 
-average_no_of_years_with_occurrence_of_all_extreme_events_considering_all_gcms_per_scenario = []
 
-for extreme_event_occurrence in range(len(no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models)): # one event's data out of the six categories of extremes
-    
-    # Event name
-    extreme_event_category = no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models[extreme_event_occurrence][5]
-    
-    # Average number of occurrences per grid point considering different impact models driven by the GCM 
-    
-    average_no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_per_scenario = []
-    
-    
-    for scenario in range(len(no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models[extreme_event_occurrence]) - 1): # -1 is to avoid the last member of the list which is the extreme event name (String)
+# Initialize storage for propensities
+propensity_data_per_extreme_event = [[None] * 5 for _ in range(len(extreme_event_categories))]
+
+scenarios = ['Early-industrial','Present Day', 'RCP2.6', 'RCP6.0', 'RCP8.5']
+
+# Loop through scenarios
+for scenario_index, scenario in enumerate(scenarios):  # Exclude the last item (event name)
+    if scenario == 'RCP8.5':
+        print("Processing scenario: RCP8.5 (with missing data for crop failures).")
         
-        if extreme_event_category == 'Crop Failures' and scenario == 4:
-            print('No data available on occurrence of crop failures for selected impact model during the period '+ time_periods_of_datasets[2] + ' under RCP 8.5 \n')
+    # Outer list to store GCM-level averages for each extreme event
+    all_gcm_averages = [[] for _ in range(len(extreme_event_categories))]
+    
+    # Loop through GCMs
+    for gcm_index, gcm in enumerate(gcms):
+        print(f"Processing Scenario={scenario}, GCM={gcm}")
+
+        # Placeholder for GCM-level propensities
+        gcm_propensities = [[] for _ in range(len(extreme_event_categories))]
+
+        # Loop through extreme events
+        for extreme_event_index, extreme_event in enumerate(extreme_event_categories):
+            if extreme_event == 'cropfailedarea' and scenario == 'RCP8.5':
+                print(f"Skipping {extreme_event} for {scenario} due to missing data.")
+                continue
+
+            # Access pre-calculated impact models with number of years for the current extreme event, scenario, and GCM
+            try:
+                number_of_years_data_for_gcm = no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models[
+                    extreme_event_index][scenario_index][gcm_index][0]
+            except IndexError:
+                print(f"Data missing for {extreme_event}, Scenario={scenario}, GCM={gcm}")
+                continue
+
+            if not number_of_years_data_for_gcm or len(number_of_years_data_for_gcm) == 0:
+                print(f"No data for {extreme_event}, Scenario={scenario}, GCM={gcm}")
+                continue
+
+            # Generate combinations of number of years for all extreme events
+            all_events_years_data_by_event = [
+                no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models[event_index][scenario_index][gcm_index][0]
+                for event_index in range(len(extreme_event_categories))
+            ]
+
+            # Initialize placeholder for the running average of impact model propensities
+            running_average_propensity = None           
+
+            # Generate cross-category combinations
+            for cross_category_combination in product(*[data for data in all_events_years_data_by_event if data]):
+                # Flatten and validate the data within the combination
+                valid_data = [
+                    data for data in cross_category_combination
+                    if isinstance(data, (xr.DataArray, xr.Dataset)) and data.size > 0
+                ]
+                if not valid_data:
+                    print("No valid data for this combination.")
+                    continue
+
+                # Concatenate valid xarray objects to calculate the denominator
+                try:
+                    denominator = xr.concat(valid_data, dim='extreme_events').mean(dim='extreme_events', skipna=True)
+                except Exception as e:
+                    print(f"Error in concatenating data: {e}")
+                    continue
+
+                # Flatten `number_of_years_data_for_gcm` to create a 2D or 3D DataArray
+                for data_index, data_array in enumerate(number_of_years_data_for_gcm):
+                    try:
+                        # Convert the current array to an xarray.DataArray
+                        flat_numerator = xr.DataArray(data_array)
+
+                        # Align dimensions in the script before calling `propensity`
+                        try:
+                            aligned_denominator = denominator.broadcast_like(flat_numerator)
+                        except ValueError as e:
+                            print(f"Dimension alignment failed for data_index {data_index}: {e}")
+                            continue
+
+                        # Calculate propensity for this specific combination
+                        try:
+                            propensity = fn.propensity(flat_numerator, aligned_denominator)
+                            
+                            # Replace inf and -inf with NaN
+                            propensity = propensity.where(~np.isinf(propensity), other=np.nan)
+                        
+                            # Update the running average
+                            if running_average_propensity is None:
+                                running_average_propensity = propensity
+                            else:
+                                combined_propensity_with_running_average = xr.concat([running_average_propensity, propensity], dim="combined_propensity_with_running_average")
+                                running_average_propensity = combined_propensity_with_running_average.mean(dim="combined_propensity_with_running_average", skipna = True)
+                                
+
+                        except Exception as e:
+                            print(f"Error in propensity calculation for data_index {data_index}: {e}")
+                            continue
+
+                    except Exception as e:
+                        print(f"Error in processing data_index {data_index}: {e}")
+                        continue
+
+            # Average propensities across all combinations for this extreme event and impact model
+            # Finalize the average for the current impact model-level propensities
+            if running_average_propensity is not None:
+                gcm_propensities[extreme_event_index].append(running_average_propensity)
+            else:
+                gcm_propensities[extreme_event_index].append(None)
+        
+        # Append GCM-level averages for each extreme event to the outer list
+        for extreme_event_index, gcm_average in enumerate(gcm_propensities):
+            if gcm_average:
+                all_gcm_averages[extreme_event_index].append(gcm_average[0])
+
+    # Ensemble averaging for each extreme event across GCMs
+    for extreme_event_index, gcm_averages in enumerate(all_gcm_averages):
+        if gcm_averages:
+            try:
+                ensemble_average_propensity = xr.concat(
+                    [p for p in gcm_averages if p is not None],
+                    dim='gcms'
+                ).mean(dim='gcms', skipna=True)
+                propensity_data_per_extreme_event[extreme_event_index][scenario_index] = ensemble_average_propensity
+            except Exception as e:
+                print(f"Error in ensemble averaging for {extreme_event_index}: {e}")
+                propensity_data_per_extreme_event[extreme_event_index][scenario_index] = None
         else:
+            propensity_data_per_extreme_event[extreme_event_index][scenario_index] = None
 
-            average_no_of_years_with_occurrence_of_extreme_event_considering_all_gcms =[]
-            
-            for gcm in no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models[extreme_event_occurrence][scenario]:
-                
-                average_no_of_years_with_occurrence_of_extreme_event_considering_all_impact_models_driven_by_the_same_gcm = xr.concat(gcm[0], dim='impact_models').mean(dim='impact_models', skipna= True) # gcm[0] because it is a list with one element (that is a list of arrays)
-                average_no_of_years_with_occurrence_of_extreme_event_considering_all_gcms.append(average_no_of_years_with_occurrence_of_extreme_event_considering_all_impact_models_driven_by_the_same_gcm)
-        
-            average_no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_per_scenario.append(average_no_of_years_with_occurrence_of_extreme_event_considering_all_gcms)
-                
-    average_no_of_years_with_occurrence_of_all_extreme_events_considering_all_gcms_per_scenario.append(average_no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_per_scenario)
-    
+# Plot the propensity data for all extreme events and scenarios
+fn.plot_propensity_of_extreme_events(propensity_data_per_extreme_event, extreme_event_categories)
 
 
-# All GCM data for all the six extreme events per scenario in one list
-all_gcm_data_for_occurrence_of_all_extreme_event_categories_per_scenario = [[[],[],[],[]],  [[],[],[],[]],  [[],[],[],[]],  [[],[],[],[]],  [[],[],[],[]]] # In the order of scenarios: early-industrial, present day, RCP2.6, RCP6.0 and RCP8.5: AND WITHIN EACH OF THOSE: Data from the 4GCMs
-
-for extreme_event in average_no_of_years_with_occurrence_of_all_extreme_events_considering_all_gcms_per_scenario:
-    
-    for scenario_of_dataset in range(len(extreme_event)):
-        
-        data_per_scenario = extreme_event[scenario_of_dataset]
-        
-        #gcm_data_for_an_extreme_event_per_scenario = []
-        
-        for gcm in range(len(data_per_scenario)): 
-        
-            #### TRYING TO GET THE SAME GCM DATA FOR ALL EXTREMES  SUCH THAT I CAN SUM THEM UP TO THE TOTAL AVERAGE
-            #position_of_gcm =  scenario_of_dataset.index(gcm)
-            
-            #all_gcm_data[gcm].append(scenario_of_dataset[gcm])
-            gcm_data = data_per_scenario[gcm]
-            
-            all_gcm_data_for_occurrence_of_all_extreme_event_categories_per_scenario[scenario_of_dataset][gcm].append(gcm_data)
-    
 
 
-# Calculating and plotting the propensity of an extreme event considering all the GCMs and Impact Models (Inorder to plot one figure of propensity per extreme event and scenario)
-
-summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0 and RCP8.5
-
-for scenario in range(len(all_gcm_data_for_occurrence_of_all_extreme_event_categories_per_scenario)): 
-    
-    all_gcm_data = all_gcm_data_for_occurrence_of_all_extreme_event_categories_per_scenario[scenario]
-    
-    propensity_of_extreme_events_considering_different_gcms_per_scenario = [[],[],[],[],[],[]] # Whereby the order of the extreme events follows the order in 'extreme_event_categories' at the beginning of this script
-    
-    # Average occurrence for only one of the extremes considering all GCMS and impact models
-    average_number_of_years_with_occurrence_of_one_extreme_event_category_per_scenario_and_all_gcms = [[],[],[],[],[],[]] # Whereby the order of the extreme events follows the order in 'extreme_event_categories' at the beginning of this script
-    
-    # Average number of years with occurrence of all extreme events considering all GCMS and impact models
-    average_number_of_years_with_occurrence_of_all_extreme_event_categories_per_scenario_and_all_gcms = []
-    
-    for gcm in range(len(all_gcm_data)):
-        
-        gcm_data_for_occurrence_of_all_extreme_event_categories_per_scenario = all_gcm_data[gcm]
-        
-        # Average occurrence for only one of the extremes
-        for i in range(len(gcm_data_for_occurrence_of_all_extreme_event_categories_per_scenario)):
-            average_number_of_years_with_occurrence_of_one_extreme_event_category_per_scenario_and_all_gcms[i].append(gcm_data_for_occurrence_of_all_extreme_event_categories_per_scenario[i])
-            
-        # Average number of occurrences for all extreme events
-        average_number_of_years_with_occurrence_of_all_extreme_event_categories_per_scenario= xr.concat(gcm_data_for_occurrence_of_all_extreme_event_categories_per_scenario, dim='impact_models_data_for_all_extremes_driven_by_same_gcm').mean(dim='impact_models_data_for_all_extremes_driven_by_same_gcm', skipna= True)
-        # Append list with average data from all GCMS
-        average_number_of_years_with_occurrence_of_all_extreme_event_categories_per_scenario_and_all_gcms.append(average_number_of_years_with_occurrence_of_all_extreme_event_categories_per_scenario)
-        
-    average_number_of_years_with_occurrence_of_all_extreme_event_categories_per_scenario_considering_all_gcms = xr.concat(average_number_of_years_with_occurrence_of_all_extreme_event_categories_per_scenario_and_all_gcms, dim='gcms_data_for_all_extremes').mean(dim='gcms_data_for_all_extremes', skipna= True)
-    
-    for extreme_event in range(len(average_number_of_years_with_occurrence_of_one_extreme_event_category_per_scenario_and_all_gcms)):
-        
-        # Import extreme event order such that data for crop failures is recognized since it is missing RCP8.5 simulations
-        extreme_event_order = extreme_event_categories
-    
-        extreme_event_data_name = extreme_event_order[extreme_event]
-        
-        extreme_event_name = fn.event_name(extreme_event_data_name)
-        
-        if extreme_event_data_name == 'cropfailedarea' and scenario == 4: # Reminder note: data on crop failures RCP8.5 simulations is missing under this dataset
-            
-            print('No data available on occurrence of crop failures under RCP8.5') 
-        
-        else:        
-        
-            average_number_of_years_with_occurrence_of_one_extreme_event_category_per_scenario = average_number_of_years_with_occurrence_of_one_extreme_event_category_per_scenario_and_all_gcms[extreme_event]
-            
-            average_number_of_years_with_occurrence_of_one_extreme_event_category_per_scenario_and_considering_all_gcms = xr.concat(average_number_of_years_with_occurrence_of_one_extreme_event_category_per_scenario, dim='gcms_data_for_extreme_event').mean(dim='gcms_data_for_extreme_event', skipna= True)
-            
-            # Propensity of an extreme event considering all GCMs (ONE-FIGURE)
-            propensity_of_an_extreme_event_considering_all_GCMs= fn.propensity(average_number_of_years_with_occurrence_of_one_extreme_event_category_per_scenario_and_considering_all_gcms, average_number_of_years_with_occurrence_of_all_extreme_event_categories_per_scenario_considering_all_gcms)
-            summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios[scenario].append(propensity_of_an_extreme_event_considering_all_GCMs)
-            
-            plot_propensity_of_an_extreme_event_considering_all_GCMs = fn.plot_propensity_considering_all_gcms_in_one_plot(propensity_of_an_extreme_event_considering_all_GCMs, extreme_event_name, scenario)
-    
-    
-    
-    
-plot_summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios = fn.plot_propensity_considering_all_gcms_and_showing_all_extremes(summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenarios, extreme_event_categories)
-        
-        
-    
 
 #%% C0-0CCURRENCE RATIO & LENGTH OF SPELL OF EXTREME EVENTS      
                
@@ -408,44 +424,22 @@ plot_summary_of_propensity_of_an_extreme_event_considering_all_GCMs_and_scenario
 
 full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario = [[[],[],[],[],[]], [[],[],[],[],[]], [[],[],[],[],[]], [[],[],[],[],[]]] # Where order of list is: the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'] and within each of these gcms: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5] whereby also within each element is the order of the list of data considering the six extreme event catergories 
 
-quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_gcms = [[[],[],[],[],[]], [[],[],[],[],[]], [[],[],[],[],[]], [[],[],[],[],[]]] # Where order of list is: the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'] and within each of these gcms: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5] whereby also within each element is the order of the list of data considering the six extreme event catergories 
 
 for extreme_event_occurrence in range(len(occurrence_of_extreme_event_considering_all_gcms_and_impact_models)): # one event's data out of the six categories of extremes
     
     # Event name
     extreme_event_category = occurrence_of_extreme_event_considering_all_gcms_and_impact_models[extreme_event_occurrence][5] # name of extreme event
-    
-    # Occurrences per grid point considering different impact models driven by the GCM 
-    #occurrence_of_extreme_event_considering_all_gcms_per_scenario = []
-    
-    #average_length_of_spell_with_occurrence_of_extreme_event_considering_all_gcms_per_scenario = []
-    
-    
+       
     for scenario in range(len(occurrence_of_extreme_event_considering_all_gcms_and_impact_models[extreme_event_occurrence]) - 1): # -1 is to avoid the last member of the list which is the extreme event name (String)
         
         if extreme_event_category == 'Crop Failures' and scenario == 4:
             print('No data available on occurrence of crop failures for selected impact model during the period '+ time_periods_of_datasets[2] + ' under RCP 8.5 \n')
         else:
             
-            #occurrence_of_extreme_event_considering_all_gcms = []
-            #average_length_of_spell_with_occurrence_of_extreme_event_considering_all_gcms =[]
             
             for gcm in range(len(occurrence_of_extreme_event_considering_all_gcms_and_impact_models[extreme_event_occurrence][scenario])):
                 
                 gcm_data_on_occurrence_of_extreme_event = occurrence_of_extreme_event_considering_all_gcms_and_impact_models[extreme_event_occurrence][scenario][gcm][0] #gcm[0] because it is a list with one element (that is a list of arrays)
-                
-                #average_length_of_spell_with_occurrence_of_extreme_event_considering_all_impact_models_driven_by_the_same_gcm 
-                quantile_95th_of_length_of_spell_with_occurrence_of_extreme_event_considering_all_impact_models = []
-                
-                for impact_model_data in gcm_data_on_occurrence_of_extreme_event:
-                   
-                    # Length of spell of an extreme event (consecutive years with impacts) such that the minimum length of a spells is 1, i.e. when you have a year with impact but no impacts the year before and after)
-                    length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model = fn.length_of_spell_with_occurrence_of_extreme_event(impact_model_data)
-                    # Remove zeros to ensure only length of spells is captured. Note: minimum length of a spells is 1, i.e. when you have a year with impact but no impacts the year before and after)
-                    length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model_considering_only_occurrences = xr.where(length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model > 0, length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model, np.nan)
-                    # 95th quantile of the length of spells
-                    quantile_95th_of_length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model = length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model_considering_only_occurrences.quantile(0.95, dim = 'time', skipna = True)
-                    quantile_95th_of_length_of_spell_with_occurrence_of_extreme_event_considering_all_impact_models.append(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_event_considering_one_impact_model)
                 
                 if extreme_event_occurrence <= 5: # To avoid the name of the extreme event in the list
                     
@@ -454,495 +448,250 @@ for extreme_event_occurrence in range(len(occurrence_of_extreme_event_considerin
                     full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario[gcm][scenario].append(gcm_data_on_occurrence_of_extreme_event) 
                     
                     
-                        
-                    
-                #average_length_of_spell_with_occurrence_of_extreme_event_considering_all_impact_models_driven_by_the_same_gcm 
-                average_quantile_95th_of_length_of_spell_with_occurrence_of_extreme_event_considering_all_impact_models = xr.concat(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_event_considering_all_impact_models, dim = 'impact_models_data_for_all_extremes_driven_by_same_gcm').mean(dim='impact_models_data_for_all_extremes_driven_by_same_gcm', skipna = True)
-                # Append to full list of length of spells for all extreme events considering all impact models and gcms
-                quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_gcms[gcm][scenario].append(average_quantile_95th_of_length_of_spell_with_occurrence_of_extreme_event_considering_all_impact_models)
-                              
-
 
 
 # CO-OCCURRENCE RATIO FOR EXTREME EVENTS considering all scenarios mapped on a single plot
 
-# Calculating co-occurrence ratio
-summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
-
-total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
-total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0
-
-for gcm in range(len(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario)):
-    
-    gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios = full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario[gcm] # All GCM data on occurrence of all extreme eventws==s
-        
-    for scenario in range(len(gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios)):
-        
-        occurrence_of_extreme_events_considering_one_scenario = gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios[scenario]
-        
-        if scenario == 4:
-            
-            print('No data available on occurrence of crop failures for selected impact model during the period '+ time_periods_of_datasets[2] + ' under RCP 8.5 \n')
-        
-        else: 
-            
-            cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_per_scenario = []
-            
-            total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = []
-            total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario =[]
-            
-            # Iteration function to achieve comparison between the different impact models driven by the same GCM and for the different extreme events
-            for cross_category_impact_models_for_all_extreme_events in itertools.product(*occurrence_of_extreme_events_considering_one_scenario): # the asterisk * unpacks all the sublits under 'occurrence_of_extreme_events_considering_one_scenario' here being impact models of occurences for each extreme event under same scenario and GCM
-                
-                #extreme_event_not_occurring = 0 # Recall zero (0) in a grid represents an extreme event not occurring that year within the grid cell
-                #extreme_event_occurring = 1 # Recall one (1) in a grid represents an extreme event occurring that year within the grid cell
-                
-                # Total number of extreme events occurring in a grid cell per year
-                total_number_of_extreme_events_occurring_per_year = xr.concat(cross_category_impact_models_for_all_extreme_events, dim='impact_models').sum(dim='impact_models',skipna=True)
-                
-                # Total number of extreme events occurring in isolation. Thus were only one extreme event per grid cell per year occurs
-                extreme_events_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year == 1, 1, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0)) # Return 1 where an extreme event occurred in one grid cell in isolation per year and 0 where more than one extreme event occurred in the same year
-                total_number_of_extreme_events_occurring_in_isolation = xr.concat(extreme_events_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)
-                #total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_occurring_in_isolation)
-                total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_occurring_in_isolation)
-                
-                # Total number of extreme events occurring not in isolation. Thus we consider where more than extreme event occurs in a grid cell per year
-                extreme_events_not_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year > 1, total_number_of_extreme_events_occurring_per_year, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0))
-                total_number_of_extreme_events_not_occurring_in_isolation = xr.concat(extreme_events_not_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)                                
-                #total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_not_occurring_in_isolation)
-                total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_not_occurring_in_isolation)
-             
-            
-            average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
-            total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
-
-            average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
-            total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
-            
-average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
-for scenario in total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios:
-    average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
-    average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs)
-
-average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
-for scenario in total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios:
-    average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
-    average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs)
-
-    
-for i in range(4): # Calculating average co-occurrence ratio for all the scenarios
-    average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = fn.cooccurrence_ratio(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[i], average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[i])
-    summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[i].append(average_cooccurrence_ratio_considering_all_GCMs_and_scenarios)
-
-plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot = fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_historical_data[0])           
-
-
-
-
-
-## Co-occurrence ratio_ including RCP8.5 (that doesnt include Crop failures data)
-
-# Calculating co-occurrence ratio
-summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0, RCP8.5
-
-total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0, RCP8.5
-total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0, RCP8.5
-
-for gcm in range(len(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario)):
-    
-    gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios = full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario[gcm] # All GCM data on occurrence of all extreme eventws==s
-        
-    for scenario in range(len(gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios)):
-        
-        occurrence_of_extreme_events_considering_one_scenario = gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios[scenario]
-    
-        cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_per_scenario = []
-        
-        total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = []
-        total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = []
-        
-        # Iteration function to achieve comparison between the different impact models driven by the same GCM and for the different extreme events
-
-        
-        for cross_category_impact_models_for_all_extreme_events in itertools.product(*occurrence_of_extreme_events_considering_one_scenario): # the asterisk * unpacks all the sublits under 'occurrence_of_extreme_events_considering_one_scenario' here being impact models of occurences for each extreme event under same scenario and GCM
-            
-            
-            #extreme_event_not_occurring = 0 # Recall zero (0) in a grid represents an extreme event not occurring that year within the grid cell
-            #extreme_event_occurring = 1 # Recall one (1) in a grid represents an extreme event occurring that year within the grid cell
-            
-            desired_shape = (50, 300, 720) # Check 
-            filtered_data = [da for da in cross_category_impact_models_for_all_extreme_events if da.shape == desired_shape]
-            # Total number of extreme events occurring in a grid cell per year
-            total_number_of_extreme_events_occurring_per_year = xr.concat(filtered_data, dim='impact_models').sum(dim='impact_models',skipna=True)
-            
-            # Total number of extreme events occurring in isolation. Thus were only one extreme event per grid cell per year occurs
-            extreme_events_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year == 1, 1, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0)) # Return 1 where an extreme event occurred in one grid cell in isolation per year and 0 where more than one extreme event occurred in the same year
-            total_number_of_extreme_events_occurring_in_isolation = xr.concat(extreme_events_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)
-            #total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_occurring_in_isolation)
-            total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_occurring_in_isolation)
-            
-            # Total number of extreme events occurring not in isolation. Thus we consider where more than extreme event occurs in a grid cell per year
-            extreme_events_not_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year > 1, total_number_of_extreme_events_occurring_per_year, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0))
-            total_number_of_extreme_events_not_occurring_in_isolation = xr.concat(extreme_events_not_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)                                
-            #total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_not_occurring_in_isolation)
-            total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_not_occurring_in_isolation)
-         
-        
-        average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
-        total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
-
-        average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
-        total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
-        
-        
-average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
-for scenario in total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios:
-    average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
-    average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs)
-
-average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
-for scenario in total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios:
-    average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
-    average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs)
-
-    
-for i in range(5): # Calculating average co-occurrence ratio for all the scenarios
-    average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = fn.cooccurrence_ratio(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[i], average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[i])
-    summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[i].append(average_cooccurrence_ratio_considering_all_GCMs_and_scenarios)
-
-plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot = fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_historical_data[0])           
-plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot = fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot_including_rcp85(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_historical_data[0])
-
-# Total average compound event occurrences accross all the GCMs and scenarios. # in order: [Early-indutrial, Present day, RCP2.6, RCP6.0, RCP8.5]
-total_average_compound_event_occurrence = [array.sum().item() for array in average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios]
-plot_total_average_compound_event_occurrence = fn.plot_compound_event_occurrences_changes(total_average_compound_event_occurrence)
-
-
-
-# =============================================================================
-# # Calculating co-occurrence ratio
-# import gc
-# summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0,  RCP8.5
-# 
-# total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0, RCP8.5
-# total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = [[],[],[],[],[]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0, RCP8.5
-# 
-# for gcm in range(len(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario)):
-#     
-#     gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios = full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario[gcm] # All GCM data on occurrence of all extreme eventws==s
-#         
-#     for scenario in range(len(gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios)):
-#         
-#         occurrence_of_extreme_events_considering_one_scenario = gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios[scenario]
-#                  
-#         cooccurrence_ratio_considering_cross_category_impact_models_for_all_extreme_events_per_scenario = []
-#         
-#         total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = []
-#         total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario =[]
-#         
-#         # Iteration function to achieve comparison between the different impact models driven by the same GCM and for the different extreme events
-#         for cross_category_impact_models_for_all_extreme_events in itertools.product(*occurrence_of_extreme_events_considering_one_scenario): # the asterisk * unpacks all the sublits under 'occurrence_of_extreme_events_considering_one_scenario' here being impact models of occurences for each extreme event under same scenario and GCM
-#             
-#             #extreme_event_not_occurring = 0 # Recall zero (0) in a grid represents an extreme event not occurring that year within the grid cell
-#             #extreme_event_occurring = 1 # Recall one (1) in a grid represents an extreme event occurring that year within the grid cell
-#             
-#             # Total number of extreme events occurring in a grid cell per year
-#             total_number_of_extreme_events_occurring_per_year = xr.concat(cross_category_impact_models_for_all_extreme_events, dim='impact_models').sum(dim='impact_models',skipna=True)
-#             
-#             # Total number of extreme events occurring in isolation. Thus were only one extreme event per grid cell per year occurs
-#             extreme_events_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year == 1, 1, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0)) # Return 1 where an extreme event occurred in one grid cell in isolation per year and 0 where more than one extreme event occurred in the same year
-#             total_number_of_extreme_events_occurring_in_isolation = xr.concat(extreme_events_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)
-#             del extreme_events_occurring_in_isolation
-#             gc.collect()
-#             #total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_occurring_in_isolation)
-#             total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_occurring_in_isolation.astype('float32'))
-#             del total_number_of_extreme_events_occurring_in_isolation
-#             gc.collect()
-#             
-#             # Total number of extreme events occurring not in isolation. Thus we consider where more than extreme event occurs in a grid cell per year as a compound pair.
-#             extreme_events_not_occurring_in_isolation = xr.where(total_number_of_extreme_events_occurring_per_year > 1, 1, xr.where(np.isnan(total_number_of_extreme_events_occurring_per_year), np.nan, 0))
-#             total_number_of_extreme_events_not_occurring_in_isolation = xr.concat(extreme_events_not_occurring_in_isolation, dim='time').sum(dim='time', skipna = True)
-#             del extreme_events_not_occurring_in_isolation 
-#             gc.collect()                             
-#             #total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(total_number_of_extreme_events_not_occurring_in_isolation)
-#             total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario.append(total_number_of_extreme_events_not_occurring_in_isolation.astype('float32'))
-#             del total_number_of_extreme_events_not_occurring_in_isolation
-#             gc.collect()
-#          
-#             
-#         average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
-#         del total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario
-#         gc.collect()
-#         total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
-# 
-#         average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario = xr.concat(total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario, dim ='impact_models').mean(dim='impact_models', skipna = True)
-#         del total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario
-#         gc.collect()
-#         total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[scenario].append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_cross_category_impact_models_under_same_scenario)
-#         
-# average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
-# for scenario in total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios:
-#     average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
-#     average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs)
-# 
-# average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios = []
-# for scenario in total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios:
-#     average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs = xr.concat(scenario, dim='all_gcms').mean(dim='all_gcms', skipna=True)
-#     average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios.append(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs)
-# 
-#     
-# for i in range(5): # Calculating average co-occurrence ratio for all the scenarios
-#     average_cooccurrence_ratio_considering_all_GCMs_and_scenarios = fn.cooccurrence_ratio(average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios[i], average_total_number_of_extreme_events_occurring_in_isolation_considering_all_GCMs_and_scenarios[i])
-#     summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios[i].append(average_cooccurrence_ratio_considering_all_GCMs_and_scenarios)
-# 
-# plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot = fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot_including_rcp85(summary_of_average_cooccurrence_ratio_considering_all_GCMs_and_scenarios, mask_for_historical_data[0])           
-# 
-# =============================================================================
-# =============================================================================
-# 
-# # Total average compound event occurrences accross all the GCMs and scenarios. # in order: [Early-indutrial, Present day, RCP2.6, RCP6.0, RCP8.5]
-# total_average_compound_event_occurrence = [array.sum().item() for array in average_total_number_of_extreme_events_not_occurring_in_isolation_considering_all_GCMs_and_scenarios]
-# plot_total_average_compound_event_occurrence = fn.plot_compound_event_occurrences_changes(total_average_compound_event_occurrence)
-# 
-# 
-# 
-# =============================================================================
-#%%  LENGTH OF SPELLS -- AGGREGATED ACROSS MODELS -- CONSIDERING ALL IMPACT MODELS AND THEIR DRIVING GCMs
-summary_of_length_of_spells_for_all_extreme_events_considering_all_GCMs_and_scenarios = [[[],[],[],[]],[[],[],[],[]],[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0 and RCP8.5
-
-for gcm in range(len(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_gcms)):  # Where order of list is: the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'] and within each of these gcms: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5] whereby also within each element is the order of the list of data considering the six extreme event catergories 
-    
-    gcm_data_on_quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_the_scenarios = quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_gcms[gcm] # All GCM data on length of spells
-    
-    # 95th quantile of length of spell with occurrence of extreme events considering all GCMS and impact models
-    quantile_95th_of_length_of_spell_with_occurrence_of_one_extreme_event_category_per_scenario_and_one_gcm = [[],[],[],[],[],[]] # Whereby the order of the extreme events follows the order in 'extreme_event_categories' at the beginning of this script
-    
-    for scenario in range(len(gcm_data_on_quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_the_scenarios)):
-        
-        quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_one_scenario = gcm_data_on_quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_the_scenarios[scenario]
-        
-        if scenario == 4:
-            
-            for i in range(len(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_one_scenario)):
-                quantile_95th_of_length_of_spell_with_occurrence_of_one_extreme_event_category_per_scenario_and_one_gcm[i].append(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_one_scenario[i])
-            # Get the index of 'cropfailedarea'
-            cropfailedarea_index = extreme_event_categories.index('cropfailedarea')
-            # Generate an empty map for cropfailedarea (CF) in RCP8.5 since we have no data
-            empty_map = xr.full_like(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_one_scenario[0], fill_value=np.nan)
-            quantile_95th_of_length_of_spell_with_occurrence_of_one_extreme_event_category_per_scenario_and_one_gcm[cropfailedarea_index].append(empty_map)
-            print('No data available on occurrence of crop failures for selected impact model during the period '+ time_periods_of_datasets[2] + ' under RCP 8.5 \n')
-        
-        else: 
-            
-            for i in range(len(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_one_scenario)):
-                quantile_95th_of_length_of_spell_with_occurrence_of_one_extreme_event_category_per_scenario_and_one_gcm[i].append(quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_one_scenario[i])
-            
-    for extreme_event in range(len(quantile_95th_of_length_of_spell_with_occurrence_of_one_extreme_event_category_per_scenario_and_one_gcm)):
-        
-        for scenario in range(len(quantile_95th_of_length_of_spell_with_occurrence_of_one_extreme_event_category_per_scenario_and_one_gcm[extreme_event])):
-            
-            summary_of_length_of_spells_for_all_extreme_events_considering_all_GCMs_and_scenarios[scenario][gcm].append(quantile_95th_of_length_of_spell_with_occurrence_of_one_extreme_event_category_per_scenario_and_one_gcm[extreme_event][scenario])
-
-# Initialize the structure to store aggregated length of spells across all GCMs and scenarios
-average_length_of_spells_for_all_extreme_events = []
-for scenario in summary_of_length_of_spells_for_all_extreme_events_considering_all_GCMs_and_scenarios[:5]:
-    
-    averaged_scenario = []
-    
-    for i in range(6):
-        gcm_data = [gcm[i] for gcm in scenario]
-        
-        if gcm_data:
-            average_length_of_spell_for_one_extreme_event_category_accross_gcms = xr.concat(gcm_data, dim="gcm").mean(dim="gcm", skipna= True)
-            averaged_scenario.append(average_length_of_spell_for_one_extreme_event_category_accross_gcms)
-        else:
-            averaged_scenario.append(None)
-            
-    
-    average_length_of_spells_for_all_extreme_events.append(averaged_scenario)
-        
-#Plot figure of_average length of spells for all extreme events 
-plot_of_average_length_of_spells_for_all_extreme_events = fn.plot_quantile_95th_of_length_of_spell_with_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_extreme_events, extreme_event_categories)
-        
-
-        
-#%% LENGTH OF SPELLS FOR COMPOUND EVENT PAIRS-- AGGREGATED ACROSS MODELS -- CONSIDERING ALL IMPACT MODELS AND THEIR DRIVING GCMs
-# Calculating co-occurrence ratio
-
-### CREATING SPACE/RAM BY FREEING MEMORY OF UNUSED VARIABLES
-occurrence_of_extreme_event_considering_all_gcms_and_impact_models = [[],[],[],[],[],[]] # Where order of list is the six extreme event catergories and within these: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5 and extreme event name] AND within each element the order of the list of data considering the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5']   
-no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models = [[],[],[],[],[],[]] # Where order of list is the six extreme event catergories and within these: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5 and extreme event name] AND within each element the order of the list of data considering the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5']   
-quantile_95th_of_length_of_spell_with_occurrence_of_extreme_events_considering_all_gcms = [[[],[],[],[],[]], [[],[],[],[],[]], [[],[],[],[],[]], [[],[],[],[],[]]] # Where order of list is: the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'] and within each of these gcms: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5] whereby also within each element is the order of the list of data considering the six extreme event catergories 
-no_of_years_with_occurrence_of_extreme_event_considering_all_gcms_and_impact_models = []
-occurrence_of_extreme_event_considering_all_gcms_and_impact_models = []
-mask_for_projected_data = []
-occurrence_of_historical_floods =[]
-occurrence_of_projected_floods =[]
-extreme_event_from_1861_until_1910 = []
-extreme_event_from_1861_until_1910_unmasked =[]
-extreme_event_from_1956_until_2005 = []
-extreme_event_from_1956_until_2005_unmasked = []
-
-
-
-# Initialize the structure to store quantiles across all GCMs and scenarios
-average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms = []
-
+# Initialize the structure to store co-occurrence ratios
+cooccurrence_ratios_per_scenario = [[[] for _ in range(5)] for _ in range(len(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario))]  # 5 scenarios for 4 GCMs
 
 # Loop through GCMs and scenarios
 for gcm in range(len(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario)):
+    gcm_data_on_occurrence_of_extreme_events = full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario[gcm]
     
-    gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios = full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario[gcm]  # All GCM data on occurrence of extreme events
-    
-    # Initialize for each GCM across all scenarios
-    average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_for_all_possible_combinations_and_GCM_per_scenario = []  
-    
-    for scenario in range(len(gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios)):
-        
-        occurrence_of_extreme_events_considering_one_scenario = gcm_data_on_occurrence_of_extreme_events_considering_all_the_scenarios[scenario]
-        
-        # Initialize the container for results per scenario and GCM
-        average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_for_all_possible_combinations_and_GCM = []
+    for scenario in range(len(gcm_data_on_occurrence_of_extreme_events)):
+        scenario_data = gcm_data_on_occurrence_of_extreme_events[scenario]
 
-        # Handle the missing cropfailedarea data for RCP8.5
-        if scenario == 4:  # since 'cropfailedarea' has no data for RCP8.5, we need to insert an empty map where appropriate
-            print('No data available for crop failures in RCP8.5; filling with empty map.')
-            empty_map = np.nan * xr.zeros_like(occurrence_of_extreme_events_considering_one_scenario[0][0].mean(dim ='time'))
-            
-            # Generate pairs of extreme events using the names of the categories
-            event_pairs = list(itertools.combinations(extreme_event_categories, 2))
-            
-            for pair in event_pairs:
-                event_1, event_2 = pair
+        if scenario == 4:  # Handle RCP8.5 with missing crop failures
+            print(f"No data available for crop failures in RCP8.5 for GCM {gcm}.")
+            continue
+
+        # Placeholder for GCM-level co-occurrence ratios
+        running_average_cooccurrence_ratios = None
+
+        # Generate combinations of impact models across extreme events
+        for cross_category_impact_models in itertools.product(*scenario_data):
+            # Calculate total occurrences per year across impact models
+            total_occurrences_per_year = xr.concat(cross_category_impact_models, dim='impact_models').sum(dim='impact_models', skipna=True)
+
+            # Calculate isolated occurrences (only 1 event per grid point)
+            isolated_occurrences = xr.where(
+                total_occurrences_per_year == 1, 1, xr.where(np.isnan(total_occurrences_per_year), np.nan, 0)
+            ).sum(dim='time', skipna=True)
+
+            # Calculate co-occurring events (more than 1 event per grid point)
+            cooccurring_events = xr.where(
+                total_occurrences_per_year > 1, total_occurrences_per_year, xr.where(np.isnan(total_occurrences_per_year), np.nan, 0)
+            ).sum(dim='time', skipna=True)
+
+            # Compute the co-occurrence ratio for this combination
+            try:
+                cooccurrence_ratio = fn.cooccurrence_ratio(cooccurring_events, isolated_occurrences)
                 
-                if 'cropfailedarea' in [event_1, event_2]:
-                    # Insert an empty map for pairs involving cropfailedarea
-                    average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_for_all_possible_combinations_and_GCM.append(empty_map)
+                # Update the running average
+                if running_average_cooccurrence_ratios is None:
+                    running_average_cooccurrence_ratios = cooccurrence_ratio
                 else:
-                    # Calculate normally for other pairs
-                    index_1 = extreme_event_categories.index(event_1)
-                    index_2 = extreme_event_categories.index(event_2)
+                    combined_cooccurrence_ratio_with_running_average = xr.concat([running_average_cooccurrence_ratios, cooccurrence_ratio], dim="combined_cooccurrence_ratio_with_running_average")
                     
-                    models_event_1 = occurrence_of_extreme_events_considering_one_scenario[index_1]
-                    models_event_2 = occurrence_of_extreme_events_considering_one_scenario[index_2]
+                    # Mask inf values as nan. These inf are a result of log error (inf) in the co-occurrence ratio calculation within some grid cells
+                    masked_ratios = combined_cooccurrence_ratio_with_running_average.where(
+                        ~np.isinf(combined_cooccurrence_ratio_with_running_average), other=np.nan)
+
+                    # Compute the running mean, skipping NaN and inf values
+                    running_average_cooccurrence_ratios = masked_ratios.mean(dim="combined_cooccurrence_ratio_with_running_average", skipna = True)
                     
-                    average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models = None
-                    
-                    for model_1, model_2 in itertools.product(models_event_1, models_event_2):
-                        # Calculate occurrence and length of spells
-                        occurrence_of_compound_events = fn.compound_event_occurrence(model_1, model_2)
-                        length_of_spell_with_occurrence_of_extreme_event = fn.length_of_spell_with_occurrence_of_extreme_event(occurrence_of_compound_events)
-                        length_of_spell_with_occurrence_of_extreme_event = xr.where(length_of_spell_with_occurrence_of_extreme_event > 0, length_of_spell_with_occurrence_of_extreme_event, np.nan)
-                        
-                        # Calculate 95th quantile
-                        quantile_95th = length_of_spell_with_occurrence_of_extreme_event.quantile(0.95, dim='time', skipna=True)
-                        
-                        if average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models is None:
-                            average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models = quantile_95th
-                        else:
-                            average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models = xr.concat(
-                                [average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models, quantile_95th],
-                                dim='impact_models').mean(dim='impact_models', skipna=True)
-                    
-                    average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_for_all_possible_combinations_and_GCM.append(average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models)
-        
+            except Exception as e:
+                print(f"Error computing co-occurrence ratio: {e}")
+                running_average_cooccurrence_ratios.append(None)
+
+        # Average co-occurrence ratio across impact models for this GCM
+        if running_average_cooccurrence_ratios is not None:
+            try:
+                cooccurrence_ratios_per_scenario[gcm][scenario].append(running_average_cooccurrence_ratios)
+            except Exception as e:
+                print(f"Error averaging co-occurrence ratio for GCM {gcm}, scenario {scenario}: {e}")
+                cooccurrence_ratios_per_scenario[gcm][scenario].append(None)
+
+
+# Aggregate co-occurrence ratios across all GCMs
+average_cooccurrence_ratios_per_scenario = []
+
+for scenario_index in range(5):  # For each scenario
+    scenario_cooccurrence_ratios = [
+        cooccurrence_ratios_per_scenario[gcm][scenario_index] 
+        for gcm in range(len(cooccurrence_ratios_per_scenario))
+    ]
+    
+    # Flatten the list
+    scenario_cooccurrence_ratios_flattened = [
+        ratio 
+        for gcm_ratios in scenario_cooccurrence_ratios 
+        for ratio in gcm_ratios 
+        if ratio is not None
+    ]
+    
+    if scenario_cooccurrence_ratios_flattened:
+        try:
+            # Concatenate along 'gcms' dimension
+            concatenated_ratios = xr.concat(
+                scenario_cooccurrence_ratios_flattened, dim='gcms'
+            )
+            
+            # Mask inf values as nan
+            masked_ratios = concatenated_ratios.where(~np.isinf(concatenated_ratios), other=np.nan)
+            
+            # Compute mean while skipping nan (and inf)
+            average_cooccurrence_ratio = masked_ratios.mean(dim='gcms', skipna=True)
+        except Exception as e:
+            print(f"Error averaging co-occurrence ratio for scenario {scenario_index}: {e}")
+            average_cooccurrence_ratio = None
+    else:
+        average_cooccurrence_ratio = None
+
+    average_cooccurrence_ratios_per_scenario.append(average_cooccurrence_ratio)
+
+
+# Plot the average co-occurrence ratios
+fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(average_cooccurrence_ratios_per_scenario, mask_for_historical_data[0])
+
+
+
+
+#%%  LENGTH OF SPELLS OF INDIVIDUAL EXTREME EVENTS -- AGGREGATED ACROSS MODELS -- CONSIDERING ALL IMPACT MODELS AND THEIR DRIVING GCMs
+
+# Initialize the structure to store 95th percentiles for each event and scenario
+quantile_95th_per_event_per_scenario = [[None for _ in range(5)] for _ in range(len(extreme_event_categories))]  # 5 scenarios
+
+# Process each extreme event individually
+for event_index, event_name in enumerate(extreme_event_categories):
+    print(f"Processing extreme event: {event_name}")
+    
+    for scenario_index in range(5):  # Loop through scenarios
+        if event_index == 5 and scenario_index == 4:  # Skip crop failures under RCP8.5
+            print(f"No data for {event_name} under RCP8.5; skipping.")
+            continue
+
+        # Initialize a list to collect spell lengths for this event and scenario
+        lengths_to_pool = []
+
+        for gcm_index, gcm_data in enumerate(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario):
+            scenario_data = gcm_data[scenario_index]  # Extract scenario data for this GCM
+            
+            # Extract data for the current event
+            event_data = scenario_data[event_index]
+            
+            for model_data in event_data:  # Loop through impact models
+                # Compute the length of spells for the current model
+                lengths_of_spells = fn.length_of_spell_with_occurrence_of_extreme_event(model_data)
+                
+                # Replace non-positive values with NaN to exclude invalid data
+                lengths_of_spells = xr.where(lengths_of_spells > 0, lengths_of_spells, np.nan)
+                
+                # Append spell lengths to the pooled list
+                lengths_to_pool.append(lengths_of_spells)
+
+        # Compute the 95th percentile for the current event and scenario
+        if lengths_to_pool:
+            try:
+                # Concatenate all lengths across 'combinations' (representing models)
+                concatenated_lengths = xr.concat(lengths_to_pool, dim='combinations')
+
+                # Compute the 95th quantile for each (lat, lon) grid cell by collapsing 'combinations' and 'years'
+                quantile_95th = concatenated_lengths.reduce(
+                    np.nanquantile, q=0.95, dim=('combinations', 'time')
+                )
+
+                # Assign the 95th quantile to the appropriate location in the structure
+                quantile_95th_per_event_per_scenario[event_index][scenario_index] = quantile_95th
+            except Exception as e:
+                print(f"Error calculating 95th quantile for event {event_name}, scenario {scenario_index}: {e}")
+                quantile_95th_per_event_per_scenario[event_index][scenario_index] = None
         else:
-            # Normal processing for other scenarios
-            event_pairs = list(itertools.combinations(range(len(occurrence_of_extreme_events_considering_one_scenario)), 2))
-            
-            for pair in event_pairs:
-                event_1, event_2 = pair
-                
-                models_event_1 = occurrence_of_extreme_events_considering_one_scenario[event_1]
-                models_event_2 = occurrence_of_extreme_events_considering_one_scenario[event_2]
-                
-                average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models = None
-                
-                for model_1, model_2 in itertools.product(models_event_1, models_event_2):
-                    # Calculate occurrence and length of spells
-                    occurrence_of_compound_events = fn.compound_event_occurrence(model_1, model_2)
-                    length_of_spell_with_occurrence_of_extreme_event = fn.length_of_spell_with_occurrence_of_extreme_event(occurrence_of_compound_events)
-                    length_of_spell_with_occurrence_of_extreme_event = xr.where(length_of_spell_with_occurrence_of_extreme_event > 0, length_of_spell_with_occurrence_of_extreme_event, np.nan)
-                    
-                    # Calculate 95th quantile
-                    quantile_95th = length_of_spell_with_occurrence_of_extreme_event.quantile(0.95, dim='time', skipna=True)
-                    
-                    if average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models is None:
-                        average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models = quantile_95th
-                    else:
-                        average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models = xr.concat(
-                            [average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models, quantile_95th],
-                            dim='impact_models').mean(dim='impact_models', skipna=True)
-                
-                average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_for_all_possible_combinations_and_GCM.append(average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_accross_impact_models)
-        
-        average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_for_all_possible_combinations_and_GCM_per_scenario.append(average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_for_all_possible_combinations_and_GCM)
-    
-    average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms.append(
-        average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_for_all_possible_combinations_and_GCM_per_scenario
-    )
+            quantile_95th_per_event_per_scenario[event_index][scenario_index] = None
 
+# Plot the results
+fn.plot_quantile_95th_of_length_of_spell_with_occurrence_considering_all_gcms_and_showing_all_extremes(
+    quantile_95th_per_event_per_scenario, extreme_event_categories
+)
 
-summary_of_length_of_spells_with_occurrence_of_compound_events_considering_all_GCMs_and_scenarios = [[[],[],[],[]],[[],[],[],[]],[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]] # scenarios in order: Early industrial, Present Day, RCP2.6, RCP6.0 and RCP8.5
+        
+#%% LENGTH OF SPELLS FOR COMPOUND EVENT PAIRS-- AGGREGATED ACROSS MODELS -- CONSIDERING ALL IMPACT MODELS AND THEIR DRIVING GCMs
 
-for gcm in range(len(average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms)):  # Where order of list is: the gcms: ['gfdl-esm2m', 'hadgem2-es', 'ipsl-cm5a-lr', 'miroc5'] and within each of these gcms: [early industrial, present day, rcp 2.6, rcp6.0, rcp 8.5] whereby also within each element is the order of the list of data considering the 15 pairs of extreme event catergories (compound events)
-    
-    gcm_data_on_average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_all_the_scenarios = average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_cross_category_impact_models_for_all_extreme_events_for_condidering_all_scenarios_considering_all_gcms[gcm] # All GCM data on length of spells
-    
-    # 95th quantile of length of spell with occurrence of extreme events considering all GCMS and impact models
-    quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_per_scenario_and_one_gcm = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]] # Whereby the order of the extreme events follows the order in 'extreme_event_categories' at the beginning of this script
-    
-    for scenario in range(len(gcm_data_on_average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_all_the_scenarios)):
-        
-        quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_one_scenario = gcm_data_on_average_quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_all_the_scenarios[scenario]
-             
-        for i in range(len(quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_one_scenario)):
-            quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_per_scenario_and_one_gcm[i].append(quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_considering_one_scenario[i])
-            
-    for extreme_event in range(len(quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_per_scenario_and_one_gcm)):
-        
-        for scenario in range(len(quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_per_scenario_and_one_gcm[extreme_event])):
-            
-            summary_of_length_of_spells_with_occurrence_of_compound_events_considering_all_GCMs_and_scenarios[scenario][gcm].append(quantile_95th_of_length_of_spell_with_occurrence_of_compound_events_per_scenario_and_one_gcm[extreme_event][scenario])
+# Initialize the structure to store pooled lengths of spells across all GCMs and scenarios
+# Generate all possible pairs of extreme events
+event_pairs = list(itertools.combinations(range(len(extreme_event_categories)), 2))
 
-# Initialize the structure to store aggregated length of spells across all GCMs and scenarios
-average_length_of_spells_for_all_compound_extreme_events = []
-for scenario in summary_of_length_of_spells_with_occurrence_of_compound_events_considering_all_GCMs_and_scenarios[:5]:
+# Initialize the structure to store 95th percentiles for each event pair and scenario
+quantile_95th_per_event_pair_per_scenario = [
+    [None for _ in range(5)]  # 5 scenarios
+    for _ in range(len(event_pairs))  # One entry for each event pair
+]
+
+# Process each event pair individually
+for pair_index, (event_1, event_2) in enumerate(event_pairs):
+    print(f"Processing extreme event pair: {extreme_event_categories[event_1]} and {extreme_event_categories[event_2]}")
     
-    averaged_scenario = []
-    
-    for i in range(15):
-        gcm_data = [gcm[i] for gcm in scenario]
-        
-        if gcm_data:
-            average_length_of_spell_for_one_pair_of_cooccuring_extreme_events_accross_gcms = xr.concat(gcm_data, dim="gcm").mean(dim="gcm", skipna= True)
-# =============================================================================
-#             # check
-#             if average_length_of_spell_for_one_pair_of_cooccuring_extreme_events_accross_gcms.shape == (50,300,720):
-#                 average_length_of_spell_for_one_pair_of_cooccuring_extreme_events_accross_gcms = average_length_of_spell_for_one_pair_of_cooccuring_extreme_events_accross_gcms.mean(dim ='time')        
-# =============================================================================
+    for scenario_index in range(5):  # Loop through scenarios
+        if scenario_index == 4 and (event_1 == 5 or event_2 == 5):  # Skip crop failures under RCP8.5
+            print(f"No data for crop failures in RCP8.5; skipping pair: {extreme_event_categories[event_1]} and {extreme_event_categories[event_2]}.")
+            continue
+
+        # Initialize a list to collect spell lengths for this event pair and scenario
+        lengths_to_pool = []
+
+        for gcm_index, gcm_data in enumerate(full_dataset_occurrence_of_extreme_events_considering_all_gcms_per_scenario):
             
-            averaged_scenario.append(average_length_of_spell_for_one_pair_of_cooccuring_extreme_events_accross_gcms)
-            
+            for model_1, model_2 in itertools.product(gcm_data[scenario_index][event_1], gcm_data[scenario_index][event_2]): # MODEL 1 EVENT 1 = gcm_data[scenario_index][event_1]  AND MODEL 2 EVENT 2 = gcm_data[scenario_index][event_2]
+                # Calculate compound event occurrence
+                compound_occurrence = fn.compound_event_occurrence(model_1, model_2)
+                
+                # Calculate lengths of spells
+                lengths_of_spells = fn.length_of_spell_with_occurrence_of_extreme_event(compound_occurrence)
+                lengths_of_spells = xr.where(lengths_of_spells > 0, lengths_of_spells, np.nan)  # Replace non-positive values with NaN
+                
+                # Append spell lengths to the pooled list
+                lengths_to_pool.append(lengths_of_spells)
+
+        # Compute the 95th percentile for the current pair and scenario
+        if lengths_to_pool:
+            try:
+                # Concatenate all lengths across 'combinations' (representing models)
+                concatenated_lengths = xr.concat(lengths_to_pool, dim='combinations')
+
+                # Compute the 95th quantile for each (lat, lon) grid cell by collapsing 'combinations' and 'time'
+                quantile_95th = concatenated_lengths.reduce(
+                    np.nanquantile, q=0.95, dim=('combinations', 'time')
+                )
+
+                # Assign the 95th quantile to the appropriate location in the structure
+                quantile_95th_per_event_pair_per_scenario[pair_index][scenario_index] = quantile_95th
+            except Exception as e:
+                print(f"Error calculating 95th quantile for pair {extreme_event_categories[event_1]} and {extreme_event_categories[event_2]}, scenario {scenario_index}: {e}")
+                quantile_95th_per_event_pair_per_scenario[pair_index][scenario_index] = None
         else:
-            averaged_scenario.append(None)
-            
-    
-    average_length_of_spells_for_all_compound_extreme_events.append(averaged_scenario)
- 
+            quantile_95th_per_event_pair_per_scenario[pair_index][scenario_index] = None
+
+# Plot the quantiles for all extreme event pairs
+fn.plot_quantile_95th_of_length_of_spell_with_compound_event_occurrence_considering_all_gcms_and_showing_all_pairs(
+    quantile_95th_per_event_pair_per_scenario, extreme_event_categories, event_pairs
+)
+
 
 # Generate names of the compound events (in the same order as the calculations above)
 compound_events_names = list(itertools.combinations(extreme_event_categories, 2))
 
-#Plot figure of_average length of spells for all compound extreme events 
-plot_of_average_length_of_spells_for_all_extreme_events = fn.plot_quantile_95th_of_length_of_spell_with_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_compound_extreme_events, compound_events_names)
-
 #Plot figure of_average length of spells for only selected compound extreme events
 selected_indices = [9, 11, 5, 1] # for the heatwaves and wildfires, heatwaves and crop failures, droughts and heatwaves, and river floods and heatwaves pairs
-plot_of_average_length_of_spells_for_selected_events = fn.plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes(average_length_of_spells_for_all_compound_extreme_events, compound_events_names, selected_indices)
+plot_of_average_length_of_spells_for_selected_events = fn.plot_quantile_95th_length_of_spell_for_event_pairs(
+    quantile_95th_per_event_pair_per_scenario,
+    compound_events_names,
+    selected_indices)
 
 second_selected_indices = [2, 6, 13]# river floods and wildfires, droughts and wildfires and crop failures and wildfires pairs
-plot_of_average_length_of_spells_for_second_selected_events = fn.plot_quantile_95th_of_length_of_spell_with_selected_compound_event_occurrence_considering_all_gcms_and_showing_all_extremes_second_plot(average_length_of_spells_for_all_compound_extreme_events, compound_events_names, second_selected_indices)
+plot_of_average_length_of_spells_for_second_selected_events = fn.plot_quantile_95th_length_of_spell_for_event_pairs_second_plot(quantile_95th_per_event_pair_per_scenario, compound_events_names, second_selected_indices)
+
+
 
 
 #%% PLOT COMBINED EVENT OCCURRENCE/ frequency
@@ -1350,11 +1099,6 @@ plot_probability_ratios_for_second_selected_events = fn.plot_probability_ratios_
     compound_events_names, 
     second_selected_indices
 )
-
-
-
-
-
 
 
 
