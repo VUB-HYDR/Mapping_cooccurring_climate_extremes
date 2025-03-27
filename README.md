@@ -1,5 +1,5 @@
-# Mapping of co-occurring climate extremes
-This code further builds onto previous scripts from [Muheki et al., 2024](https://zenodo.org/records/10970524). Here, we map the global changes in the frequency, spatial distribution and dependence of co-occurring extreme events under different climate change scenarios. 
+# Mapping of concurrent hazards and impacts associated with climate extremes under climate change
+This code further builds onto previous scripts from [Muheki et al., 2024](https://zenodo.org/records/10970524). Here, we map the global changes in the frequency, spatial distribution and dependence of concurrent hazards and impacts associated with climate extremes under different climate change scenarios. 
 
 ## Python Scripts
 This repository includes two python scripts used in this anaylsis, namely:
