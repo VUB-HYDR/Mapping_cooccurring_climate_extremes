@@ -34,6 +34,11 @@ time_periods_of_datasets = ['1861-1910', '1956-2005', '2050-2099']
 
 extreme_event_categories = ['floodedarea', 'driedarea', 'heatwavedarea', 'burntarea', 'tropicalcyclonedarea', 'cropfailedarea']
 
+# Supplementary case: extreme categories with exception of crop failures. # Uncomment this to plot the propensity and co-occurrence metrics withoutr considering crop failures.
+# =============================================================================
+# extreme_event_categories = ['floodedarea', 'driedarea', 'heatwavedarea', 'burntarea', 'tropicalcyclonedarea']
+# =============================================================================
+
 compound_events = [['floodedarea', 'burntarea'], ['floodedarea', 'heatwavedarea'], ['heatwavedarea', 'burntarea'], 
                    ['heatwavedarea', 'cropfailedarea'], ['driedarea', 'burntarea'], ['driedarea', 'heatwavedarea'],
                    ['cropfailedarea','burntarea'], ['floodedarea', 'driedarea'], ['floodedarea', 'cropfailedarea'],
@@ -397,6 +402,11 @@ for scenario_index, scenario in enumerate(scenarios):  # Exclude the last item (
 # Plot the propensity data for all extreme events and scenarios
 fn.plot_propensity_of_extreme_events(propensity_data_per_extreme_event, extreme_event_categories)
 
+# Supplementary case: extreme categories with exception of crop failures. # Uncomment this to plot the propensity without considering crop failures.
+# =============================================================================
+# # Plot the propensity data for all extreme events (except cropfailures) and scenarios
+# fn.plot_propensity_of_extreme_events_with_exception_of_crop_failures(propensity_data_per_extreme_event_without_cropfailures, extreme_event_categories)
+# =============================================================================
 
 
 
@@ -555,7 +565,12 @@ for scenario_index in range(5):  # For each scenario
 # Plot the average co-occurrence ratios
 fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(average_cooccurrence_ratios_per_scenario, mask_for_historical_data[0])
 
-
+# Supplementary case: extreme categories with exception of crop failures. # Uncomment this to plot the co-occurrence without considering crop failures.
+# =============================================================================
+# # Plot the average co-occurrence ratios with exception of crop failures
+# fn.plot_cooccurrence_ratio_considering_all_gcms_in_a_single_plot(average_cooccurrence_ratios_per_scenario, mask_for_historical_data[0])
+# 
+# =============================================================================
 
 
 #%%  LENGTH OF SPELLS OF INDIVIDUAL EXTREME EVENTS -- AGGREGATED ACROSS MODELS -- CONSIDERING ALL IMPACT MODELS AND THEIR DRIVING GCMs
