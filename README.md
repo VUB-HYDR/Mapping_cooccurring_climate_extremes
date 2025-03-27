@@ -6,7 +6,7 @@ This repository includes two python scripts used in this anaylsis, namely:
 ### 1. [global_funcs.py](https://github.com/VUB-HYDR/Mapping_cooccurring_climate_extremes/blob/1234d0bedaf294fd844c3b94fb7e9b9eb9b520f1/global_funcs.py)
 This python script enntails all the functions used in this analysis. Users should first run this script, before running the main.py.
 
-### 2. [global_main.py](https://github.com/VUB-HYDR/Mapping_cooccurring_climate_extremes/blob/ad31ff60461ab7c11658af7b9bf67212950bea2d/global_main.py) 
+### 2. [global_main.py](https://github.com/VUB-HYDR/Mapping_cooccurring_climate_extremes/blob/48eb471aa886c602fd8f075e3988fec13b479813/global_main.py) 
 This python script entails all the methods used to analyse the dataset using the functions within funcs.py. Users shoud ensure that the main.py, funcs.py and the datasets are all within the same directory before running this script.
 
 ## Python Environment
@@ -20,6 +20,10 @@ Gabriele Messori
 
 Derrick Muheki
 
+Fulden Batibeniz
+
 Emanuele Bevacqua
+
+Laura Suarez-Gutierrez
 
 Wim Thiery
